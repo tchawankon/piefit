@@ -121,18 +121,74 @@ const Sound = (() => {
     try { if(!ensure()) return; fn(ctx.currentTime + .01); duck(name === 'finish' ? 2 : .7); } catch(e){}
   }
   function vibrate(p){ if(SET.vib && navigator.vibrate){ try { navigator.vibrate(p); } catch(e){} } }
-  function say(text){
+  function say(text, o){
     if(!SET.voice || !window.speechSynthesis || !text) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text), lang = SET.voiceLang === 'th' ? 'th-TH' : 'en-US';
-      u.lang = lang; u.rate = 1.05; u.volume = Math.min(1, SET.vol + .2);
+      u.lang = lang; u.rate = (o && o.rate) || 1.05; u.volume = Math.min(1, SET.vol + .2);
       const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith(lang.slice(0, 2)));
       if(v) u.voice = v;
-      if(ctx) duck(3);
+      if(ctx){ duck(3); duckAmb(Math.min(12, 2 + text.length / 12)); }
       speechSynthesis.speak(u);
     } catch(e){}
   }
+
+  /* ---- calm ambient soundscapes for yoga and stretching (all generated, no audio files) ---- */
+  let amb = null, ambBuf = null;
+  const ambLevel = () => (SET.ambVol || .5) * .6;
+  function longNoise(){
+    if(ambBuf) return ambBuf;
+    const len = ctx.sampleRate * 6; ambBuf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for(let c = 0; c < 2; c++){ const d = ambBuf.getChannelData(c); let b = 0; for(let i = 0; i < len; i++){ b = .97 * b + .03 * (Math.random()*2 - 1); d[i] = b * 6; } } // soft brown-ish noise
+    return ambBuf;
+  }
+  function noiseLoop(bus, type, freq, q, gain){
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = longNoise(); s.loop = true; f.type = type; f.frequency.value = freq; f.Q.value = q || .7; g.gain.value = gain;
+    s.connect(f); f.connect(g); g.connect(bus); s.start(); amb.src.push(s);
+    return {f, g};
+  }
+  function lfo(param, rate, depth){ const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = rate; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); amb.src.push(o); }
+  function bowl(bus, at){
+    const f = [196, 220, 247, 262, 294][Math.floor(Math.random() * 5)];
+    [[1, .5], [2.71, .22], [5.1, .08]].forEach(([m, gn]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f * m;
+      g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(gn * .5, at + .02); g.gain.exponentialRampToValueAtTime(.0001, at + 9 / m);
+      o.connect(g); g.connect(bus); o.start(at); o.stop(at + 9);
+    });
+  }
+  const AMBIENTS = {
+    pad(bus){ // slow warm chords that drift between Am - F - C - G
+      const chords = [[57,64,69,72],[53,60,65,69],[48,55,64,67],[55,62,67,71]];
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(bus); lfo(lp.frequency, .05, 300);
+      const oscs = chords[0].map((n, i) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = i % 2 ? 'triangle' : 'sine'; o.frequency.value = N(n); o.detune.value = (i - 1.5) * 4; g.gain.value = .09; o.connect(g); g.connect(lp); o.start(); amb.src.push(o); return o; });
+      let c = 0; amb.iv.push(setInterval(() => { c = (c + 1) % 4; oscs.forEach((o, i) => o.frequency.setTargetAtTime(N(chords[c][i]), ctx.currentTime, 2.5)); }, 12000));
+    },
+    rain(bus){ noiseLoop(bus, 'highpass', 900, .5, .35); const d = noiseLoop(bus, 'bandpass', 3500, .8, .18); lfo(d.g.gain, .3, .05); },
+    ocean(bus){ const w = noiseLoop(bus, 'lowpass', 500, .7, .25); lfo(w.g.gain, .08, .22); lfo(w.f.frequency, .08, 250); noiseLoop(bus, 'lowpass', 160, .7, .12); },
+    bowls(bus){ const strike = () => bowl(bus, ctx.currentTime + .05); strike(); amb.iv.push(setInterval(strike, 9000)); noiseLoop(bus, 'lowpass', 300, .7, .04); },
+    wind(bus){ const w = noiseLoop(bus, 'bandpass', 600, 1.2, .3); lfo(w.f.frequency, .04, 350); lfo(w.g.gain, .06, .12); }
+  };
+  function startAmbient(style){
+    if(!AMBIENTS[style]) return; try { if(!ensure()) return; } catch(e){ return; }
+    stopAmbient(true);
+    const bus = ctx.createGain(); bus.gain.value = .0001; bus.connect(master);
+    amb = {style, bus, src:[], iv:[]};
+    AMBIENTS[style](bus);
+    bus.gain.setTargetAtTime(ambLevel(), ctx.currentTime, 1.2); // fade in
+  }
+  function stopAmbient(now){
+    if(!amb) return; const a = amb; amb = null;
+    a.iv.forEach(clearInterval);
+    a.bus.gain.setTargetAtTime(.0001, ctx.currentTime, now ? .05 : .6);
+    setTimeout(() => { a.src.forEach(s => { try { s.stop(); } catch(e){} }); a.bus.disconnect(); }, now ? 200 : 2500);
+  }
+  function duckAmb(sec){
+    if(!amb) return; const g = amb.bus.gain, t0 = ctx.currentTime;
+    g.cancelScheduledValues(t0); g.setTargetAtTime(ambLevel() * .45, t0, .2); g.setTargetAtTime(ambLevel(), t0 + sec, .8);
+  }
+  const AMB_KEYS = Object.keys(AMBIENTS);
 
   /* ---- generated workout beat: Am-F-C-G loop, three energy levels ---- */
   const STYLES = {
@@ -177,6 +233,6 @@ const Sound = (() => {
     if(document.hidden){ if(timer){ const w = wanted; stopMusic(true); wanted = w; } }
     else if(wanted && !timer) startMusic(wanted);
   });
-  return {play, say, vibrate, startMusic, stopMusic, musicOn:() => !!timer, ensure,
+  return {play, say, vibrate, startMusic, stopMusic, musicOn:() => !!timer, ensure, startAmbient, stopAmbient, ambientOn:() => !!amb, AMB_KEYS,
     events: () => Object.fromEntries(Object.entries(VARIANTS).map(([k, v]) => [k, Object.keys(v)])), THEMES};
 })();

@@ -320,15 +320,27 @@ const Yoga = (() => {
   function steps(poses){ const out = []; poses.forEach(([id, sec]) => { if(POSES[id].side){ out.push({id, sec, side:1}, {id, sec, side:2}); } else out.push({id, sec, side:0}); }); return out; }
   function start(s, after, opts){
     view = {name:'yrun', sess:s, st:steps(s.poses), i:0, after, t0:Date.now(), done:[], kind:(opts && opts.kind) || 'yoga', ask:null};
+    // calm background sound for yoga and the cool-down (not before training, where the workout music may play)
+    if(view.kind !== 'warm' && SET.amb && SET.amb !== 'off') Sound.startAmbient(SET.amb);
     render(); window.scrollTo(0, 0);
   }
+  const VL = pair => SET.voiceLang === 'th' ? pair[1] : pair[0];
+  const rate = () => SET.ygRate === 'normal' ? .95 : .8;
   function runView(){
     const v = view, step = v.st[v.i];
     if(!step) return finish();
     const p = POSES[step.id], lv = lvlOf(step.id), lvl = p.lv[lv - 1], next = v.st[v.i + 1];
-    const routine = v.kind === 'warm' || v.kind === 'cool';
+    const routine = v.kind === 'warm' || v.kind === 'cool', guide = SET.ygVoice !== false;
+    const prepSec = step.side === 2 ? Math.min(4, SET.ygPrep) : SET.ygPrep;
+    if(v.phase == null){ v.phase = prepSec > 0 ? 'prep' : 'hold'; v.remain = v.phase === 'prep' ? prepSec : step.sec; }
+    // say the pose and how to do it once, slowly, when the step starts
+    if(guide && v.spoken !== v.i){
+      v.spoken = v.i;
+      Sound.say(step.side === 2 ? tv('yv_side2', VL(p.n)) : VL(p.n) + '. ' + (step.id === 'savasana' ? '' : VL(lvl.n) + '. ') + VL(lvl.d), {rate:rate()});
+    }
     app.innerHTML = `<div class="runbar"><button class="chip" id="yq">${routine ? t('rt_skip') + ' ⏭' : '✕'}</button>
-        <div class="track grow"><div class="fill" style="width:${v.i / v.st.length * 100}%"></div></div><small>${v.i + 1}/${v.st.length}</small></div>
+        <div class="track grow"><div class="fill" style="width:${v.i / v.st.length * 100}%"></div></div><small>${v.i + 1}/${v.st.length}</small>
+        ${v.kind !== 'warm' ? `<button class="chip mini" id="yamb" aria-label="${t('yg_set_amb')}">${Sound.ambientOn() ? '🌊' : '🔇'}</button>` : ''}</div>
       ${v.ask ? `<div class="card hl"><small>${t('yg_how', L(POSES[v.ask].n))}</small><div class="row gap" style="margin-top:6px">
         <button class="btn ghost small" data-feel="hard">😣 ${t('yg_hard')}</button><button class="btn ghost small" data-feel="ok">🙂 ${t('yg_ok')}</button><button class="btn ghost small" data-feel="easy">😌 ${t('yg_easy')}</button></div></div>` : ''}
       <div class="lbl-sm">${v.kind === 'cool' ? '🧊 ' + t('rt_cool') : v.kind === 'warm' ? '🤸 ' + t('rt_warm') : L(v.sess.n)}${step.side ? ' · ' + t(step.side === 1 ? 'yg_side1' : 'yg_side2') : ''}</div>
@@ -336,39 +348,58 @@ const Yoga = (() => {
       ${step.id !== 'savasana' ? lvlChips(step.id, lv, 'ylv') : ''}
       ${figSVG('figure')}
       <p style="margin:6px 0"><b>${L(lvl.n)}</b> — ${L(lvl.d)}</p>
-      <div class="card center"><b class="bigtime" id="yt">${fmtTime(step.sec)}</b>
+      <div class="card center"><small id="yph">${v.phase === 'prep' ? t('yg_getready') : t('yg_hold')}</small><b class="bigtime" id="yt">${fmtTime(v.remain)}</b>
         <div class="row gap"><button class="btn ghost" id="yprev" ${v.i === 0 ? 'disabled' : ''}>←</button><button class="btn" id="ypause">${v.paused ? '▶ ' + t('yg_resume') : '⏸ ' + t('yg_pause')}</button><button class="btn ghost" id="ynext">⏭</button></div></div>
       ${next ? `<small class="note">${t('up_next')}: ${L(POSES[next.id].n)}${next.side === 2 ? ' (' + t('yg_side2') + ')' : ''}</small>` : ''}`;
     startAnim(document.getElementById('figure'), {A:p.base, B:lvl.pose, deco:p.deco});
-    if(v.remain == null) v.remain = step.sec;
     if(v.iv) clearInterval(v.iv);
     let last = -1; v.end = Date.now() + v.remain * 1000;
     const tick = () => {
       if(v.paused) return;
       const n = Math.ceil((v.end - Date.now()) / 1000); v.remain = Math.max(0, n);
-      if(n !== last){ last = n; const el = document.getElementById('yt'); if(el) el.textContent = fmtTime(Math.max(0, n)); if(n > 0 && n <= 3) Sound.play('tick'); }
-      if(n <= 0) advance();
+      if(n !== last){
+        last = n; const el = document.getElementById('yt'); if(el) el.textContent = fmtTime(Math.max(0, n));
+        if(v.phase === 'hold' && n > 0){
+          if(guide && n <= 5) Sound.say(String(n), {rate:1});                        // 5, 4, 3, 2, 1
+          else if(!guide && n <= 3) Sound.play('tick');
+          if(guide && step.sec >= 30 && step.id !== 'savasana' && n === Math.floor(step.sec / 2)) Sound.say(tv('yv_breathe'), {rate:rate()});
+        }
+      }
+      if(n <= 0){
+        if(v.phase === 'prep'){ // get-ready time is over: start holding
+          v.phase = 'hold'; v.remain = step.sec; v.end = Date.now() + step.sec * 1000; last = -1; Sound.play('log');
+          const ph = document.getElementById('yph'); if(ph) ph.textContent = t('yg_hold');
+        } else advance();
+      }
     };
     v.iv = setInterval(tick, 200);
     const advance = () => {
-      // count the time actually spent in the pose (skipping early counts less)
-      const spent = Math.max(0, step.sec - (v.remain == null ? step.sec : v.remain));
-      clearInterval(v.iv); v.iv = null; v.remain = null;
+      // count the time actually spent holding (skipping early counts less)
+      const spent = v.phase === 'hold' ? Math.max(0, step.sec - (v.remain == null ? step.sec : v.remain)) : 0;
+      clearInterval(v.iv); v.iv = null; v.remain = null; v.phase = null;
       v.done.push({id:step.id, lvl:lvlOf(step.id), sec:spent});
       const nx = v.st[v.i + 1];
-      if(step.side === 1){ Sound.play('log'); Sound.say(tv('yv_switch')); }
-      else { Sound.play('go'); if(nx) Sound.say(tv('yv_next', SET.voiceLang === 'th' ? POSES[nx.id].n[1] : POSES[nx.id].n[0])); if(step.id !== 'savasana' && step.side !== 1) v.ask = step.id; }
+      if(step.side === 1){ Sound.play('log'); if(!guide) Sound.say(tv('yv_switch')); }
+      else { Sound.play('go'); if(nx && !guide) Sound.say(tv('yv_next', VL(POSES[nx.id].n))); if(step.id !== 'savasana') v.ask = step.id; }
       v.i++; render(); window.scrollTo(0, 0);
     };
-    on('[data-ylv]', el => { YLVL[step.id] = +el.dataset.ylv; YFEEL[step.id] = 0; save(); const r = v.remain; render(); v.remain = r; });
-    on('[data-feel]', el => { feel(v.ask, el.dataset.feel); v.ask = null; const r = v.remain; render(); v.remain = r; });
+    on('[data-ylv]', el => {
+      YLVL[step.id] = +el.dataset.ylv; YFEEL[step.id] = 0; save();
+      if(guide){ const nl = p.lv[+el.dataset.ylv - 1]; Sound.say(VL(nl.n) + '. ' + VL(nl.d), {rate:rate()}); }
+      render();
+    });
+    on('[data-feel]', el => { feel(v.ask, el.dataset.feel); v.ask = null; render(); });
     $('#ypause').onclick = () => { v.paused = !v.paused; if(!v.paused) v.end = Date.now() + v.remain * 1000; $('#ypause').textContent = v.paused ? '▶ ' + t('yg_resume') : '⏸ ' + t('yg_pause'); };
     $('#ynext').onclick = advance;
-    $('#yprev').onclick = () => { clearInterval(v.iv); v.iv = null; v.remain = null; v.i = Math.max(0, v.i - 1); render(); };
+    $('#yprev').onclick = () => { clearInterval(v.iv); v.iv = null; v.remain = null; v.phase = null; v.spoken = null; v.i = Math.max(0, v.i - 1); render(); };
     $('#yq').onclick = () => { if(!routine && v.done.length && !confirm(t('yg_quit'))) return; clearInterval(v.iv); v.i = v.st.length; finish(); };
+    if($('#yamb')) $('#yamb').onclick = () => {
+      if(Sound.ambientOn()) Sound.stopAmbient(); else Sound.startAmbient(SET.amb !== 'off' ? SET.amb : 'pad');
+      $('#yamb').textContent = Sound.ambientOn() ? '🌊' : '🔇';
+    };
   }
   function finish(){
-    const v = view; if(v.iv) clearInterval(v.iv);
+    const v = view; if(v.iv) clearInterval(v.iv); Sound.stopAmbient(); try { speechSynthesis.cancel(); } catch(e){}
     const sec = v.done.reduce((s, d) => s + d.sec, 0);
     if(sec > 0){ YLOG.push({id:newId(), t:Date.now(), sess:v.sess.id || v.kind, min:Math.round(sec / 6) / 10, poses:v.done.map(d => [d.id, d.lvl])}); save(); }
     if(v.kind === 'cool' || v.kind === 'warm') return v.after();

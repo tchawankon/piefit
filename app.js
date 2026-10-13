@@ -11,7 +11,7 @@ const store = {
   set(k, v){ try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch(e){} }
 };
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
-const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, vol:0.7, voice:true, voiceLang:'en', vib:true, music:'off', wake:true, onboarded:false,
+const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, vol:0.7, voice:true, voiceLang:'en', vib:true, music:'off', wake:true, onboarded:false, ygVoice:true, ygRate:'slow', ygPrep:6, amb:'pad', ambVol:0.5,
   sfx:{go:'chime', log:'pop', exdone:'arcade', finish:'arcade', level:'arcade'}};
 let LOG, MASTERED, NEWS, TG, CAL, SET, ACTIVE;
 function loadState(){
@@ -645,6 +645,7 @@ function runView(){
       <button class="btn ${done >= N ? '' : 'ghost'}" id="next">${view.i === view.list.length - 1 ? t('finish') : t('next') + ' →'}</button></div>
     <div style="height:14px"></div>${warnBlock(id)}${howTo(id, first)}${view.cal ? '' : goalBlock(id)}`;
   startAnim(document.getElementById('figure'), x.anim);
+  if(!view.cal && !view.rest && view.annI !== view.i){ view.annI = view.i; Sound.say(tv('v_this_ex', x.name, planVoice(view.i))); }
   if(view.rest && !document.querySelector('.restm')){ const r = view.rest; startRest(0, r.cue, r.cueVoice, r.next, r.end); }
 
   const step = x.hold ? 5 : 1, rEl = $('#r');
@@ -686,6 +687,13 @@ function runView(){
     else { ACTIVE = null; store.set('active', null); Sound.stopMusic(); go('home'); }
   };
 }
+function planVoice(i){
+  const id = view.list[i], x = EX[id]; if(!x) return '';
+  const sg = suggest(id), N = view.setsN || SETS;
+  let w = sg.w; if(view.wMul && view.wMul < 1 && w != null) w = roundTo(w * view.wMul, incOf(x));
+  return tv(x.hold ? 'v_plan_secs' : 'v_plan_reps', N, sg.reps) + (x.load && w != null ? tv('v_plan_w', w) : '');
+}
+const exVoice = i => EX[view.list[i]] ? tv('v_next_ex', EX[view.list[i]].name, planVoice(i)) : '';
 function resetEx(){ view.reps = null; view.w = null; view.testNext = null; saveActive(); render(); window.scrollTo(0, 0); }
 function logSet(id, isTest, done, N){
   const x = EX[id], news0 = NEWS.length;
@@ -714,17 +722,18 @@ function logSet(id, isTest, done, N){
   Sound.play(isTest ? 'target' : (!view.cal && done + 1 >= N) ? 'exdone' : 'log');
   if(NEWS.length > news0){ setTimeout(() => Sound.play('level'), 450); Sound.say(tv('v_level')); }
   const nextId = view.list[view.i + 1];
-  if(view.cal){ const nn = nextId ? EX[nextId].name : ''; startRest(restFor(x, true), nn, nn, true); }
+  if(view.cal){ const nn = nextId ? EX[nextId].name : ''; startRest(restFor(x, true), nn, nn ? tv('v_next_ex', nn, '') : '', true); }
   else if(isTest){ view.w = null; render(); toast(t('test_saved')); }
   else if(view.pair && view.pair[view.i] != null){
     // superset: A -> short break -> B -> full rest -> A ...
     const mate = view.pair[view.i], mateDone = loggedSets(mate).filter(l => !l.cal).length >= N, first = mate > view.i;
     if(!mateDone) startRest(first ? 20 : Math.max(restFor(x), restFor(EX[view.list[mate]])), exName(view.list[mate]), EX[view.list[mate]].name, mate);
     else if(done + 1 < N) startRest(restFor(x), t('set_n', done + 2), tv('set_n', done + 2), false);
-    else if(Math.max(view.i, mate) + 1 < view.list.length) startRest(restFor(x), exName(view.list[Math.max(view.i, mate) + 1]), EX[view.list[Math.max(view.i, mate) + 1]].name, Math.max(view.i, mate) + 1);
+    else if(Math.max(view.i, mate) + 1 < view.list.length) startRest(restFor(x), exName(view.list[Math.max(view.i, mate) + 1]), exVoice(Math.max(view.i, mate) + 1), Math.max(view.i, mate) + 1);
     else render();
   }
   else if(done + 1 < N) startRest(restFor(x), t('set_n', done + 2), tv('set_n', done + 2), false);
+  else if(view.i + 1 < view.list.length) startRest(restFor(x), exName(view.list[view.i + 1]), exVoice(view.i + 1), view.i + 1);
   else render();
 }
 function editSet(lid){
@@ -745,8 +754,8 @@ function deleteSet(lid){
   persist(); if(view.name === 'run') saveActive(); render();
 }
 function restAfter(next){
-  if(typeof next === 'number'){ view.i = next; view.w = null; view.reps = null; }
-  else if(next){ view.i++; view.w = null; }
+  if(typeof next === 'number'){ view.i = next; view.w = null; view.reps = null; view.annI = next; }
+  else if(next){ view.i++; view.w = null; view.annI = view.i; }
   view.rest = null; saveActive(); render();
   if(next) window.scrollTo(0, 0);
 }
@@ -783,7 +792,10 @@ function startRest(sec, cue, cueVoice, next, endAt){
   // and the alarm fires as soon as the app is visible again
   const iv = setInterval(() => {
     const n = Math.ceil((r.end - Date.now()) / 1000);
-    if(n !== last){ last = n; b.textContent = fmtTime(Math.max(0, n)); if(n > 0 && n <= 3 && !document.hidden) Sound.play('tick'); }
+    if(n !== last){
+      last = n; b.textContent = fmtTime(Math.max(0, n));
+      if(n > 0 && n <= 5 && !document.hidden){ if(SET.voice) Sound.say(String(n), {rate:1}); else if(n <= 3) Sound.play('tick'); }
+    }
     if(n <= 0) close(true);
   }, 200);
   o.querySelectorAll('[data-d]').forEach(el => el.onclick = () => { r.end = Math.max(Date.now() + 1000, r.end + +el.dataset.d * 1000); last = -1; saveActive(); if(document.hidden) notify(); });
@@ -988,6 +1000,15 @@ function settingsView(){
       ${Object.entries(Sound.events()).map(([ev, vars]) => `<div class="row" style="margin-top:10px"><span class="grow">${t('ev_' + ev)}</span>
         <select class="inp" data-sfx="${ev}" style="width:auto;margin:0">${vars.map(v => `<option value="${v}" ${SET.sfx[ev] === v ? 'selected' : ''}>${t('var_' + v)}</option>`).join('')}</select>
         <button class="chip mini" data-hear="${ev}" aria-label="${t('snd_try')}">▶</button></div>`).join('')}</div>
+    <div class="card"><b>🧘 ${t('yg_set_title')}</b>
+      <b style="display:block;margin-top:10px">${t('yg_set_voice')}</b>${segHTML('ygv', [['1', '🗣 ' + t('on')], ['0', t('off')]], SET.ygVoice ? '1' : '0')}<small>${t('yg_set_voice_note')}</small>
+      <b style="display:block;margin-top:12px">${t('yg_set_rate')}</b>${segHTML('ygr', [['slow', t('rate_slow')], ['normal', t('rate_normal')]], SET.ygRate)}
+      <b style="display:block;margin-top:4px">${t('yg_set_prep')}</b><div class="chips">${[0, 3, 6, 10].map(s => `<button class="chip ${SET.ygPrep === s ? 'on' : ''}" data-ygp="${s}">${s ? s + 's' : t('off')}</button>`).join('')}</div>
+      <b style="display:block;margin-top:14px">${t('yg_set_amb')}</b>
+      <div class="row gap" style="margin-top:6px"><select class="inp" id="ambsel" style="margin:0">${['off'].concat(Sound.AMB_KEYS).map(k => `<option value="${k}" ${SET.amb === k ? 'selected' : ''}>${t('amb_' + k)}</option>`).join('')}</select>
+        <button class="chip mini" id="ambtry" aria-label="${t('snd_try')}">${Sound.ambientOn() ? '■' : '▶'}</button></div>
+      <b style="display:block;margin-top:10px">${t('yg_set_ambvol')}</b>${segHTML('ambv', [['0.3', t('vol_low')], ['0.5', t('vol_mid')], ['0.8', t('vol_high')]], String(SET.ambVol))}
+      <small>${t('amb_note')}</small></div>
     <div class="card"><b>🎵 ${t('snd_music')}</b>${segHTML('music', [['off', t('off')], ['chill', t('mus_chill')], ['focus', t('mus_focus')], ['power', t('mus_power')]], SET.music)}
       <small>${t('snd_music_note')}</small></div>
     <div class="card"><b>${t('snd_try')}</b><div class="grid2" style="margin-top:8px">
@@ -1009,6 +1030,12 @@ function settingsView(){
   on('[data-wake]', el => { SET.wake = el.dataset.wake === '1'; persist(); render(); });
   on('[data-vlang]', el => { SET.voiceLang = el.dataset.vlang; persist(); Sound.say(tv('v_go', tv('set_n', 2))); render(); });
   on('[data-vib]', el => { SET.vib = el.dataset.vib === '1'; persist(); Sound.vibrate(150); render(); });
+  on('[data-ygv]', el => { SET.ygVoice = el.dataset.ygv === '1'; persist(); render(); });
+  on('[data-ygr]', el => { SET.ygRate = el.dataset.ygr; persist(); Sound.say(tv('yv_sample'), {rate: SET.ygRate === 'normal' ? .95 : .8}); render(); });
+  on('[data-ygp]', el => { SET.ygPrep = +el.dataset.ygp; persist(); render(); });
+  $('#ambsel').onchange = e => { SET.amb = e.target.value; persist(); if(SET.amb === 'off') Sound.stopAmbient(); else Sound.startAmbient(SET.amb); render(); };
+  $('#ambtry').onclick = () => { if(Sound.ambientOn()) Sound.stopAmbient(); else { Sound.startAmbient(SET.amb !== 'off' ? SET.amb : 'pad'); } render(); };
+  on('[data-ambv]', el => { SET.ambVol = +el.dataset.ambv; persist(); if(Sound.ambientOn()) Sound.startAmbient(SET.amb !== 'off' ? SET.amb : 'pad'); render(); });
   on('[data-music]', el => { SET.music = el.dataset.music; persist(); if(Sound.musicOn()) Sound.stopMusic(); render(); });
   on('[data-try]', el => {
     const k = el.dataset.try;
