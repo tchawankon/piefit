@@ -1,0 +1,8 @@
+{
+  "appId": "com.tchawankon.piefit",
+  "appName": "PieFit",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": { "iconColor": "#d9480f" }
+  }
+}

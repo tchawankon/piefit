@@ -1,0 +1,65 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Capacitor
+        run: npm install --no-audit --no-fund
+
+      - name: Bundle web app
+        run: npm run bundle
+
+      - name: Create Android project
+        run: |
+          npx cap add android
+          bash native/customize.sh
+          npx cap sync android
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          echo "$KS_B64" | base64 -d > release.p12
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -f -p 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          "$BT/apksigner" sign --ks release.p12 --ks-pass env:KS_PASS --ks-key-alias piefit --key-pass env:KS_PASS --out PieFit.apk aligned.apk
+          "$BT/apksigner" verify PieFit.apk
+          rm release.p12
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: PieFit Android 1.0.${{ github.run_number }}
+          body: Install PieFit.apk on Android. Installing a newer APK over an older one keeps your data.
+          files: PieFit.apk
+          make_latest: true

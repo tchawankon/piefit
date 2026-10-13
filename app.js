@@ -61,6 +61,7 @@ const ladTitle = title => (SET.lang === 'th' && LADTH[title]) || title;
 
 /* ================= exercise helpers ================= */
 const SETS = 3;
+const APK_URL = 'https://github.com/tchawankon/piefit/releases/latest/download/PieFit.apk';
 const DAY = 864e5;
 const EQ_KEYS = ['rings','trx','abwheel','barbell','dumbbell','machine','cable','bar','floor'];
 // equipment usable at each training place
@@ -407,6 +408,7 @@ const TABS = [['home','🏠','tab_home'], ['lib','📚','tab_lib'], ['prog','�
 function go(tb, v){ tab = tb; view = v || {name:'home'}; render(); window.scrollTo(0, 0); }
 let wakeLock = null;
 async function keepAwake(on){
+  if(Native.keepAwake(on && SET.wake)) return;
   try {
     if(on && SET.wake && 'wakeLock' in navigator && !wakeLock && document.visibilityState === 'visible'){
       wakeLock = await navigator.wakeLock.request('screen');
@@ -487,7 +489,7 @@ function homeView(){
   on('[data-venue]', el => { SET.venue = el.dataset.venue; persist(); render(); });
   on('[data-s]', el => go('home', {name:'session', s:el.dataset.s}));
   if($('#calgo')) $('#calgo').onclick = () => go('home', {name:'session', s:'cal'});
-  if($('#resume')) $('#resume').onclick = () => { if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
+  if($('#resume')) $('#resume').onclick = () => { Native.prepare(); if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
   if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };
 }
 function lastDone(sid){
@@ -528,6 +530,7 @@ function sessionView(){
 
 /* ================= workout ================= */
 function startWorkout(sid, list, cal){
+  Native.prepare();
   view = {name:'run', s:sid, list:list.slice(), i:0, logged:{}, cal, t0:Date.now(), news0:NEWS.length, results:[]};
   tab = 'home'; saveActive(); if(SET.music !== 'off') Sound.startMusic(SET.music); render(); window.scrollTo(0, 0);
 }
@@ -676,8 +679,15 @@ function startRest(sec, cue, cueVoice, next, endAt){
   document.body.appendChild(o);
   if(!endAt) Sound.play('rest');
   const b = o.querySelector('.bigtime');
+  const notify = () => Native.scheduleRest(r.end, t('notif_title'), r.cue ? t('v_go', r.cue) : t('v_rest_over'));
+  const onVis = () => { if(document.hidden) notify(); else Native.cancelRest(); };
+  document.addEventListener('visibilitychange', onVis);
+  document.addEventListener('pause', notify);
+  document.addEventListener('resume', Native.cancelRest);
+  if(document.hidden) notify();
   const close = done => {
-    clearInterval(iv); o.remove();
+    clearInterval(iv); o.remove(); Native.cancelRest();
+    document.removeEventListener('visibilitychange', onVis); document.removeEventListener('pause', notify); document.removeEventListener('resume', Native.cancelRest);
     if(done){
       const late = Math.round((Date.now() - r.end) / 1000);
       Sound.play('go'); Sound.vibrate([250, 120, 250]);
@@ -693,7 +703,7 @@ function startRest(sec, cue, cueVoice, next, endAt){
     if(n !== last){ last = n; b.textContent = fmtTime(Math.max(0, n)); if(n > 0 && n <= 3 && !document.hidden) Sound.play('tick'); }
     if(n <= 0) close(true);
   }, 200);
-  o.querySelectorAll('[data-d]').forEach(el => el.onclick = () => { r.end = Math.max(Date.now() + 1000, r.end + +el.dataset.d * 1000); last = -1; saveActive(); });
+  o.querySelectorAll('[data-d]').forEach(el => el.onclick = () => { r.end = Math.max(Date.now() + 1000, r.end + +el.dataset.d * 1000); last = -1; saveActive(); if(document.hidden) notify(); });
   o.querySelector('[data-skip]').onclick = () => close(false);
 }
 function finishWorkout(){
@@ -836,7 +846,9 @@ function moreView(){
       <button class="btn" id="exp" style="margin-top:10px">⬇ ${t('export')}</button>
       <button class="btn ghost" id="imp" style="margin-top:8px">⬆ ${t('import')}</button>
       <input type="file" id="impf" accept="application/json,.json" hidden></div>
-    <h2>${t('install')}</h2><div class="card"><small>${t('install_note')}</small></div>`;
+    ${Native.on ? `<h2>${t('apk_title')}</h2><div class="card"><small>${t('apk_update')}</small><a class="vid" href="${APK_URL}" target="_blank" rel="noopener">⬇ ${t('apk_get')}</a></div>`
+      : `<h2>${t('install')}</h2><div class="card"><small>${t('install_note')}</small></div>
+         <div class="card"><b>🤖 ${t('apk_title')}</b><br><small>${t('apk_note')}</small><a class="btn" style="margin-top:10px;text-align:center;text-decoration:none" href="${APK_URL}">⬇ ${t('apk_get')}</a></div>`}`;
   on('[data-v]', el => go('more', {name:el.dataset.v}));
   $('#exp').onclick = exportData;
   $('#imp').onclick = () => $('#impf').click();
@@ -921,9 +933,11 @@ function settingsView(){
 }
 function exportData(){
   const data = {app:'piefit', version:2, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET};
+  const name = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => alert(t('export_fail'))); return; }
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.download = name;
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
   toast(t('exported'));
@@ -953,4 +967,4 @@ function importData(file){
 /* ================= boot ================= */
 loadState();
 render();
-if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+if(!Native.on && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});

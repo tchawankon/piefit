@@ -1,0 +1,16 @@
+{
+  "name": "piefit",
+  "private": true,
+  "description": "PieFit Android build (Capacitor). The web app itself needs no build step.",
+  "scripts": {
+    "bundle": "node native/bundle.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/share": "^8.0.3"
+  }
+}

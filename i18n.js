@@ -356,3 +356,16 @@ Object.assign(STR.th, {
   wake_title:'ให้จอเปิดค้างระหว่างซ้อม', rest_late:'หมดเวลาพักไปแล้ว {0} วินาที',
   wake_note:'จอจะไม่ดับเองระหว่างเปิดหน้าซ้อม เสียงเตือนพักจึงดังตรงเวลา กินแบตเพิ่มนิดหน่อย ถ้าออกจากแอปไป ตัวจับเวลายังนับถูก และจะเตือนทันทีที่กลับเข้าแอป'
 });
+
+Object.assign(STR.en, {
+  notif_title:'PieFit · Rest over', export_fail:'Could not share the backup file.',
+  apk_title:'Android app', apk_get:'Download the Android app (APK)',
+  apk_note:'The Android app can alert you when rest is over even with the screen off. Download, open the file, and allow "Install unknown apps" for your browser if asked. Your data here does not move automatically: Export here, then Import in the app.',
+  apk_update:'To update, download the latest APK and install it over this one. Your data is kept.'
+});
+Object.assign(STR.th, {
+  notif_title:'PieFit · หมดเวลาพัก', export_fail:'แชร์ไฟล์สำรองไม่สำเร็จ',
+  apk_title:'แอป Android', apk_get:'ดาวน์โหลดแอป Android (APK)',
+  apk_note:'แอป Android เตือนหมดเวลาพักได้แม้ปิดจออยู่ ดาวน์โหลดแล้วเปิดไฟล์ ถ้าเครื่องถาม ให้อนุญาต "ติดตั้งแอปที่ไม่รู้จัก" สำหรับเบราว์เซอร์ ข้อมูลในเว็บจะไม่ย้ายไปเอง ให้ Export ที่นี่ แล้ว Import ในแอป',
+  apk_update:'อัปเดต: ดาวน์โหลด APK ล่าสุดแล้วติดตั้งทับได้เลย ข้อมูลยังอยู่'
+});
