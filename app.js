@@ -284,66 +284,135 @@ function restFor(x, test){
 
 /* ================= animation ================= */
 let raf = 0;
+/* Figure renderer: side-view mannequin with both arms and legs (far side faded), hands, feet and a nose,
+   a faint dashed ghost of the start pose, an arrow for the main movement, a glow on the target muscles,
+   a frame zoomed to the figure, slow timing with a hold at the end, and pause / scrub controls. */
 function figSVG(id){
-  return `<svg class="fig" id="${id}" viewBox="0 0 180 150" role="img" aria-label="Exercise animation">
-    <line class="bar" data-k="topbar" x1="10" y1="4" x2="170" y2="4" stroke-width="4" stroke-linecap="round"/>
-    <line class="ground" x1="6" y1="136" x2="174" y2="136"/>
-    <g data-k="deco"></g>
-    <line class="strap" data-k="strap" stroke-width="1.5"/>
-    <circle class="ring" data-k="ring" r="6"/>
-    <polyline class="limb" data-k="leg2" opacity=".55"/>
-    <polyline class="limb" data-k="leg"/>
-    <line class="torso" data-k="torso"/>
-    <polyline class="limb" data-k="arm"/>
-    <circle class="head" data-k="head" r="7"/>
-    <rect class="pr-r" data-k="pdb" width="14" height="8" rx="3" display="none"/>
-    <circle class="pr-b" data-k="pbb" r="8" display="none"/>
-    <circle class="pr-r" data-k="ph" r="4" display="none"/>
-  </svg>`;
+  return `<div class="figwrap"><svg class="fig" id="${id}" viewBox="0 0 180 150" role="img" aria-label="Exercise animation"></svg>
+    <div class="figctl"><button class="chip mini" data-figp="${id}" aria-label="pause">⏸</button><input type="range" min="0" max="100" value="0" data-figr="${id}" aria-label="scrub"></div></div>`;
 }
-function startAnim(svg, a){
+const NS_SVG = 'http://www.w3.org/2000/svg';
+const sv = (tag, at, parent) => { const n = document.createElementNS(NS_SVG, tag); for(const k in at) n.setAttribute(k, at[k]); if(parent) parent.appendChild(n); return n; };
+const lerp2 = (a, b, e) => [a[0] + (b[0]-a[0])*e, a[1] + (b[1]-a[1])*e];
+const add2 = (a, b) => [a[0]+b[0], a[1]+b[1]];
+const ptsS = (...p) => p.map(v => v[0].toFixed(1) + ',' + v[1].toFixed(1)).join(' ');
+// which body segment glows for each muscle / stretch area: [from, to, start fraction, end fraction] or [joint]
+const GLOW = {chest:[['s']], shoulders:[['s']], triceps:[['s','e']], biceps:[['s','e']], lats:[['s','p',0,.6]], upperback:[['s','p',0,.4]],
+  core:[['s','p',.45,1]], glutes:[['p']], quads:[['p','k']], hamstrings:[['p','k']], calves:[['k','f']],
+  hips:[['p']], groin:[['p']], spine:[['s','p']], wrists:[['w']], back:[['s','p',0,.6]], neck:[['s','h']], relax:[]};
+const FAR_OFF = [-4, -3]; // far-side limbs sit slightly behind and above the near ones
+function fitBox(a, K){
+  const xs = [], ys = [];
+  K.forEach(P => Object.values(P).forEach(([x, y]) => { xs.push(x); ys.push(y); }));
+  (a.deco || []).forEach(d => { xs.push(d[1], d[0] === 'r' ? d[1] + d[3] : d[3]); ys.push(d[2], d[0] === 'r' ? d[2] + d[4] : d[4]); });
+  if(a.grip || a.cab){ ys.push(a.cab ? a.cab[1] : 4); xs.push(a.cab ? a.cab[0] : a.ax); }
+  ys.push(138);
+  let x0 = Math.min(...xs) - 16, x1 = Math.max(...xs) + 16, y0 = Math.min(...ys) - (a.grip || a.cab ? 18 : 12), y1 = Math.max(...ys) + 4;
+  const w = x1 - x0, h = y1 - y0, W = Math.max(w, h * 1.2, 90), H = W / 1.2;
+  x0 -= (W - w) / 2; y0 -= (H - h);
+  return [x0, y0, W, H];
+}
+function footEnd(knee, ankle){
+  if(ankle[1] > 126) return [ankle[0] + 9, ankle[1] + .5]; // on the floor: toes forward
+  const dx = ankle[0] - knee[0], dy = ankle[1] - knee[1], L = Math.hypot(dx, dy) || 1;
+  let nx = -dy / L, ny = dx / L; if(nx < 0){ nx = -nx; ny = -ny; }
+  return [ankle[0] + nx * 8, ankle[1] + ny * 8];
+}
+function noseTri(P){
+  const dx = P.h[0] - P.s[0], dy = P.h[1] - P.s[1], L = Math.hypot(dx, dy) || 1;
+  let nx = -dy / L, ny = dx / L; if(nx < 0){ nx = -nx; ny = -ny; }
+  return [[P.h[0] + nx*7 - ny*3, P.h[1] + ny*7 + nx*3], [P.h[0] + nx*11.5, P.h[1] + ny*11.5], [P.h[0] + nx*7 + ny*3, P.h[1] + ny*7 - nx*3]];
+}
+function startAnim(svg, a, opts){
   cancelAnimationFrame(raf);
   if(!svg || !a) return;
-  const q = k => svg.querySelector(`[data-k="${k}"]`);
-  const K = a.C ? [a.A, a.B, a.C] : [a.A, a.B];
-  const n = K.length, move = 1500, hold = 600, fwd = (n-1)*move, cycle = 2*(fwd+hold);
-  const pts = (...p) => p.map(v => v.join(',')).join(' ');
-  const ringMode = a.grip && !a.cab;
-  q('deco').innerHTML = (a.deco || []).map(d => d[0] === 'r'
-    ? `<rect class="decr" x="${d[1]}" y="${d[2]}" width="${d[3]}" height="${d[4]}" rx="2"/>`
-    : `<line class="decl" x1="${d[1]}" y1="${d[2]}" x2="${d[3]}" y2="${d[4]}"/>`).join('');
-  q('topbar').setAttribute('display', (a.grip || a.cab) && !a.nobar ? 'inline' : 'none');
-  q('ring').setAttribute('display', ringMode ? 'inline' : 'none');
-  q('strap').setAttribute('display', a.grip || a.cab ? 'inline' : 'none');
-  const propEl = a.prop ? q({db:'pdb', bb:'pbb', h:'ph'}[a.prop]) : null;
-  if(propEl) propEl.setAttribute('display', 'inline');
-  const t0 = performance.now();
+  opts = opts || {};
+  const K = a.C ? [a.A, a.B, a.C] : [a.A, a.B], n = K.length, A = K[0], END = K[n - 1];
+  const vb = fitBox(a, K); svg.setAttribute('viewBox', vb.map(v => v.toFixed(1)).join(' '));
+  const uid = svg.id + Math.random().toString(36).slice(2, 6);
+  svg.innerHTML = `<defs><filter id="gl${uid}" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4"/></filter>
+    <marker id="ah${uid}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>`;
+  const floorPose = K.some(P => P.p[1] > 112 || (P.h[1] > 100 && P.f[1] > 126 && P.s[1] > 95));
+  if(floorPose && !(a.deco || []).some(d => d[0] === 'r')) sv('rect', {class:'mat', x:vb[0] - 5, y:134, width:vb[2] + 10, height:5, rx:2.5}, svg);
+  sv('line', {class:'ground', x1:vb[0] - 5, y1:136, x2:vb[0] + vb[2] + 5, y2:136}, svg);
+  if((a.grip || a.cab) && !a.nobar) sv('line', {class:'bar', x1:vb[0] - 5, y1:4, x2:vb[0] + vb[2] + 5, y2:4, 'stroke-width':4, 'stroke-linecap':'round'}, svg);
+  (a.deco || []).forEach(d => d[0] === 'r' ? sv('rect', {class:'decr', x:d[1], y:d[2], width:d[3], height:d[4], rx:2}, svg)
+    : sv('line', {class:'decl', x1:d[1], y1:d[2], x2:d[3], y2:d[4]}, svg));
+  // ghost of the start pose
+  const gh = sv('g', {class:'ghost'}, svg);
+  sv('polyline', {points:ptsS(A.s, A.e, A.w)}, gh); sv('polyline', {points:ptsS(A.p, A.k, A.f)}, gh);
+  sv('line', {x1:A.s[0], y1:A.s[1], x2:A.p[0], y2:A.p[1]}, gh); sv('circle', {cx:A.h[0], cy:A.h[1], r:7}, gh);
+  // movement arrow for the joint that travels furthest
+  let best = null;
+  ['p','s','h','w','f','k','e'].forEach(k => { if(!A[k] || !END[k]) return; const m = Math.hypot(END[k][0]-A[k][0], END[k][1]-A[k][1]); if(!best || m > best.m) best = {k, m}; });
+  let arrow = null;
+  if(best && best.m > 12){
+    const p0 = A[best.k], p1 = END[best.k], mid = [(p0[0]+p1[0])/2, (p0[1]+p1[1])/2], nx = -(p1[1]-p0[1]) / best.m * 9, ny = (p1[0]-p0[0]) / best.m * 9;
+    arrow = sv('path', {class:'arrow', d:`M${p0[0]+nx},${p0[1]+ny} Q${mid[0]+nx*2.2},${mid[1]+ny*2.2} ${p1[0]+nx},${p1[1]+ny}`, 'marker-end':`url(#ah${uid})`}, svg);
+  }
+  const G = {}, ringMode = a.grip && !a.cab;
+  if(a.grip){ G.strap2 = sv('line', {class:'strap far'}, svg); if(ringMode) G.ring2 = sv('circle', {class:'ring far', r:5.5}, svg); }
+  G.farLeg = sv('polyline', {class:'farlimb', 'stroke-width':6}, svg); G.farFoot = sv('line', {class:'farlimb', 'stroke-width':5}, svg);
+  G.farArm = sv('polyline', {class:'farlimb', 'stroke-width':5}, svg); G.farHand = sv('circle', {class:'farfill', r:3}, svg);
+  G.torso = sv('line', {class:'torso'}, svg); G.neck = sv('line', {class:'limb', 'stroke-width':5}, svg);
+  G.hl = sv('g', {class:'glow', filter:`url(#gl${uid})`}, svg);
+  G.leg = sv('polyline', {class:'limb', 'stroke-width':7}, svg); G.foot = sv('line', {class:'limb', 'stroke-width':6}, svg);
+  if(a.grip){ G.strap = sv('line', {class:'strap'}, svg); if(ringMode) G.ring = sv('circle', {class:'ring', r:6}, svg); }
+  G.arm = sv('polyline', {class:'limb', 'stroke-width':6}, svg); G.hand = sv('circle', {class:'fill', r:3.6}, svg);
+  G.head = sv('circle', {class:'head', r:8.5}, svg); G.nose = sv('polygon', {class:'fill'}, svg);
+  if(a.prop === 'db'){ G.prop2 = sv('rect', {class:'pr-r far', width:14, height:8, rx:3}, svg); G.prop = sv('rect', {class:'pr-r', width:14, height:8, rx:3}, svg); }
+  if(a.prop === 'bb'){ G.prop2 = sv('circle', {class:'pr-b far', r:8.5}, svg); G.prop = sv('circle', {class:'pr-b', r:9.5}, svg); }
+  if(a.prop === 'h') G.prop = sv('circle', {class:'pr-r', r:4}, svg);
+  const fs = vb[3] * .065; G.label = sv('text', {class:'phase', x:vb[0] + 4, y:vb[1] + fs * 1.05, 'font-size':fs.toFixed(1)}, svg);
+  const glow = (opts.areas || []).flatMap(m => GLOW[m] || []);
+  // timeline: hold the start, move, hold the end longer, move back
+  const MV = 1700, HOLD_END = 1700, BACK = 1300, HOLD_A = 650, fwd = (n - 1) * MV, back = (n - 1) * BACK, CYC = HOLD_A + fwd + HOLD_END + back;
+  const sm = f => f*f*(3-2*f);
+  const posAt = ms => { const t = ms % CYC;
+    if(t < HOLD_A) return 0;
+    if(t < HOLD_A + fwd){ const q = (t - HOLD_A) / MV; return Math.floor(q) + sm(q % 1); }
+    if(t < HOLD_A + fwd + HOLD_END) return n - 1;
+    const q = (t - HOLD_A - fwd - HOLD_END) / BACK; return (n - 1) - (Math.floor(q) + sm(q % 1)); };
+  const ctlP = document.querySelector(`[data-figp="${svg.id}"]`), ctlR = document.querySelector(`[data-figr="${svg.id}"]`);
+  let playing = true, manual = 0, t0 = performance.now();
+  if(ctlP) ctlP.onclick = () => { playing = !playing; ctlP.textContent = playing ? '⏸' : '▶'; if(playing) t0 = performance.now(); };
+  if(ctlR){ ctlR.max = (n - 1) * 100; ctlR.oninput = () => { playing = false; if(ctlP) ctlP.textContent = '▶'; manual = ctlR.value / 100; }; }
+  const set = (el, at) => { for(const k in at) el.setAttribute(k, at[k]); };
   function frame(now){
-    const tt = Math.max(0, now - t0) % cycle;
-    const pos = tt < fwd ? tt/move : tt < fwd+hold ? n-1 : tt < 2*fwd+hold ? (n-1) - (tt-fwd-hold)/move : 0;
-    const i = Math.min(n-2, Math.floor(pos)), f = pos - i, e = f*f*(3-2*f);
-    const P = K[i], Q = K[i+1];
-    const j = m => Q[m] && P[m] ? [P[m][0] + (Q[m][0]-P[m][0])*e, P[m][1] + (Q[m][1]-P[m][1])*e] : null;
-    const [h, s, el, w, p, k, fo] = ['h','s','e','w','p','k','f'].map(j);
-    q('head').setAttribute('cx', h[0]); q('head').setAttribute('cy', h[1]);
-    q('torso').setAttribute('x1', s[0]); q('torso').setAttribute('y1', s[1]);
-    q('torso').setAttribute('x2', p[0]); q('torso').setAttribute('y2', p[1]);
-    q('arm').setAttribute('points', pts(s, el, w));
-    q('leg').setAttribute('points', pts(p, k, fo));
-    const k2 = j('k2'), f2 = j('f2');
-    q('leg2').setAttribute('points', k2 ? pts(p, k2, f2) : '');
+    const ms = Math.max(0, now - t0), pos = playing ? posAt(ms) : manual;
+    if(playing && ctlR) ctlR.value = Math.round(pos * 100);
+    const i = Math.min(n - 2, Math.floor(pos)), f = pos - i, P0 = K[i], P1 = K[i + 1], P = {};
+    for(const k of Object.keys(P1)) P[k] = P0[k] ? lerp2(P0[k], P1[k], f) : P1[k];
+    for(const k of Object.keys(P0)) if(!P[k]) P[k] = P0[k];
+    const F = {e:add2(P.e, FAR_OFF), w:add2(P.w, FAR_OFF), k:P.k2 || add2(P.k, FAR_OFF), f:P.f2 || add2(P.f, FAR_OFF)};
+    set(G.farLeg, {points:ptsS(P.p, F.k, F.f)});
+    const ff = footEnd(F.k, F.f); set(G.farFoot, {x1:F.f[0], y1:F.f[1], x2:ff[0], y2:ff[1]});
+    set(G.farArm, {points:ptsS(P.s, F.e, F.w)}); set(G.farHand, {cx:F.w[0], cy:F.w[1]});
+    set(G.torso, {x1:P.s[0], y1:P.s[1], x2:P.p[0], y2:P.p[1]}); set(G.neck, {x1:P.s[0], y1:P.s[1], x2:P.h[0], y2:P.h[1]});
+    G.hl.innerHTML = '';
+    if(glow.length){
+      G.hl.setAttribute('opacity', ((.4 + .25 * Math.sin(ms / 420)) * (.45 + .55 * Math.min(1, pos))).toFixed(2));
+      glow.forEach(g => {
+        if(g.length === 1) sv('circle', {cx:P[g[0]][0], cy:P[g[0]][1], r:9}, G.hl);
+        else { const s0 = lerp2(P[g[0]], P[g[1]], g[2] || 0), s1 = lerp2(P[g[0]], P[g[1]], g[3] == null ? 1 : g[3]); sv('line', {x1:s0[0], y1:s0[1], x2:s1[0], y2:s1[1]}, G.hl); }
+      });
+    }
+    set(G.leg, {points:ptsS(P.p, P.k, P.f)}); const fe = footEnd(P.k, P.f); set(G.foot, {x1:P.f[0], y1:P.f[1], x2:fe[0], y2:fe[1]});
+    set(G.arm, {points:ptsS(P.s, P.e, P.w)}); set(G.hand, {cx:P.w[0], cy:P.w[1]});
+    set(G.head, {cx:P.h[0], cy:P.h[1]}); set(G.nose, {points:ptsS(...noseTri(P))});
     if(a.grip){
-      const g = j(a.grip);
-      q('ring').setAttribute('cx', g[0]); q('ring').setAttribute('cy', g[1]);
-      const ax = a.cab ? a.cab[0] : a.ax, ay = a.cab ? a.cab[1] : 4;
-      q('strap').setAttribute('x1', ax); q('strap').setAttribute('y1', ay);
-      q('strap').setAttribute('x2', g[0]); q('strap').setAttribute('y2', ringMode ? g[1]-6 : g[1]);
+      const g = P[a.grip], g2 = a.grip === 'w' ? F.w : a.grip === 'f2' ? g : F.f, ax = a.cab ? a.cab[0] : a.ax, ay = a.cab ? a.cab[1] : 4;
+      set(G.strap, {x1:ax, y1:ay, x2:g[0], y2:ringMode ? g[1] - 6 : g[1]}); if(G.ring) set(G.ring, {cx:g[0], cy:g[1]});
+      set(G.strap2, {x1:ax - 4, y1:ay, x2:g2[0], y2:ringMode ? g2[1] - 6 : g2[1]}); if(G.ring2) set(G.ring2, {cx:g2[0], cy:g2[1]});
     }
-    if(propEl){
-      const g = j(a.pj || 'w');
-      if(a.prop === 'db'){ propEl.setAttribute('x', g[0]-7); propEl.setAttribute('y', g[1]-4); }
-      else { propEl.setAttribute('cx', g[0]); propEl.setAttribute('cy', g[1]); }
+    if(G.prop){
+      const pj = a.pj || 'w', g = P[pj], g2 = pj === 'w' ? F.w : null;
+      if(a.prop === 'db'){ set(G.prop, {x:g[0]-7, y:g[1]-4}); if(g2) set(G.prop2, {x:g2[0]-7, y:g2[1]-4}); }
+      else { set(G.prop, {cx:g[0], cy:g[1]}); if(G.prop2 && g2) set(G.prop2, {cx:g2[0], cy:g2[1]}); }
     }
+    if(arrow) arrow.setAttribute('opacity', pos > .02 && pos < n - 1.02 ? .95 : .3);
+    gh.setAttribute('opacity', pos >= n - 1.02 ? .1 : .2);
+    G.label.textContent = pos < .02 ? t('an_start') : pos > n - 1.02 ? t('an_hold') : t('an_move');
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
@@ -644,7 +713,7 @@ function runView(){
     <div class="row gap" style="margin-top:8px"><button class="btn ghost" id="prev" ${view.i === 0 ? 'disabled' : ''}>← ${t('prev')}</button>
       <button class="btn ${done >= N ? '' : 'ghost'}" id="next">${view.i === view.list.length - 1 ? t('finish') : t('next') + ' →'}</button></div>
     <div style="height:14px"></div>${warnBlock(id)}${howTo(id, first)}${view.cal ? '' : goalBlock(id)}`;
-  startAnim(document.getElementById('figure'), x.anim);
+  startAnim(document.getElementById('figure'), x.anim, {areas:x.p});
   if(!view.cal && !view.rest && view.annI !== view.i){ view.annI = view.i; Sound.say(tv('v_this_ex', x.name, planVoice(view.i))); }
   if(view.rest && !document.querySelector('.restm')){ const r = view.rest; startRest(0, r.cue, r.cueVoice, r.next, r.end); }
 
@@ -880,7 +949,7 @@ function detailView(){
       <br><small>${t('today_plan')}: ${SETS} × ${fmtSet(x, suggest(id).reps, suggest(id).w)}</small></div>
     <button class="btn" id="testex">🧪 ${t('test_this')}</button>
     <a class="vid" href="${searchLink(x)}" target="_blank" rel="noopener">${t('video')} ↗</a>`;
-  startAnim(document.getElementById('figure'), x.anim);
+  startAnim(document.getElementById('figure'), x.anim, {areas:x.p});
   $('#back').onclick = () => go(view.from === 'paths' ? 'more' : 'lib', view.from === 'paths' ? {name:'paths'} : undefined);
   $('#testex').onclick = () => startWorkout('cal', [id], true);
 }

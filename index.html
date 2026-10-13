@@ -22,7 +22,9 @@
     --accent:#ff8a4c; --accent-ink:#141413; --ok:#69db7c; --fig:#f1efe8; --bar:#6b695f;
   }
 }
-:root[data-theme="dark"]{
+:root{--far:#c9c6bc;--glow:#f59f00;--mat:#dfe7ef}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--far:#77746b;--glow:#ffd43b;--mat:#2f3b4a}}
+:root[data-theme="dark"]{--far:#77746b;--glow:#ffd43b;--mat:#2f3b4a;
   --bg:#141413; --card:#1f1f1d; --ink:#f1efe8; --mute:#a09e95; --line:#34332f; --soft:#3a2418;
   --accent:#ff8a4c; --accent-ink:#141413; --ok:#69db7c; --fig:#f1efe8; --bar:#6b695f;
 }
@@ -82,9 +84,17 @@ nav button.on{color:var(--accent)} nav button.on .ic{filter:none;opacity:1}
 .runbar{position:sticky;top:0;z-index:3;background:var(--bg);display:flex;align-items:center;gap:10px;padding:8px 0;margin:-8px 0 4px}
 .fig{background:var(--card);border:1px solid var(--line);border-radius:16px;display:block;width:100%;height:auto;max-height:30vh}
 .fignote{font-size:12px;margin:4px 2px 10px}
-.fig .bar,.fig .strap{stroke:var(--bar)} .fig .ring{fill:none;stroke:var(--accent);stroke-width:2.5}
-.fig .limb{stroke:var(--fig);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;fill:none}
-.fig .torso{stroke:var(--accent);stroke-width:8;stroke-linecap:round}
+.figwrap{margin-bottom:4px}.figctl{display:flex;align-items:center;gap:8px;margin:6px 0 0}.figctl input{flex:1;accent-color:var(--accent)}
+.fig .bar{stroke:var(--bar)} .fig .strap{stroke:var(--bar);stroke-width:1.5}.fig .strap.far{opacity:.6;stroke-width:1.2}
+.fig .ring{fill:none;stroke:var(--accent);stroke-width:2.5}.fig .ring.far{opacity:.55;stroke-width:2.2}
+.fig .farlimb{stroke:var(--far);fill:none;stroke-linecap:round;stroke-linejoin:round}.fig .farfill{fill:var(--far)}
+.fig .fill{fill:var(--fig)} .fig .mat{fill:var(--mat)}
+.fig .ghost{stroke:var(--mute);stroke-width:2;stroke-dasharray:3 3;fill:none;stroke-linecap:round}
+.fig .arrow{fill:none;stroke:var(--glow);stroke-width:2;stroke-dasharray:4 3}.fig .arrowhead{fill:var(--glow)}
+.fig .glow{stroke:var(--glow);fill:var(--glow);stroke-width:12;stroke-linecap:round}
+.fig .phase{fill:var(--mute)} .fig .pr-r.far,.fig .pr-b.far{opacity:.55}
+.fig .limb{stroke:var(--fig);stroke-linecap:round;stroke-linejoin:round;fill:none}
+.fig .torso{stroke:var(--accent);stroke-width:12;stroke-linecap:round}
 .fig .head{fill:var(--fig)} .fig .ground{stroke:var(--line);stroke-width:2}
 .fig .decr{fill:var(--line);stroke:var(--bar);stroke-width:1.5}.fig .decl{stroke:var(--bar);stroke-width:4;stroke-linecap:round}
 .fig .pr-r{fill:var(--accent)}.fig .pr-b{fill:none;stroke:var(--accent);stroke-width:3}

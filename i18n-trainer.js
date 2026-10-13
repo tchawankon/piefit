@@ -252,3 +252,7 @@ Object.assign(STR.th, {
   v_go:'หมดเวลาพัก {0} ลุย!', v_this_ex:'{0} {1}', v_next_ex:'ท่าต่อไป {0} {1}',
   v_plan_reps:'{0} เซ็ต เซ็ตละ {1} ครั้ง', v_plan_secs:'{0} เซ็ต เซ็ตละ {1} วินาที', v_plan_w:' น้ำหนัก {0} กิโล'
 });
+
+// ---- animation phase labels
+Object.assign(STR.en, {an_start:'Start', an_move:'Moving…', an_hold:'End position', fig_note:'Side view. Faded limbs are the far side, the glow shows the target area and the dashed figure is the start position. Use ⏸ and the slider to look step by step.'});
+Object.assign(STR.th, {an_start:'ท่าเริ่ม', an_move:'กำลังเคลื่อนไหว…', an_hold:'ท่าจบ / ค้าง', fig_note:'มุมข้าง แขนขาสีจางคือข้างไกล ส่วนที่เรืองแสงคือจุดที่ออกแรงหรือยืด และหุ่นเส้นประคือท่าเริ่ม กด ⏸ หรือเลื่อนแถบเพื่อดูทีละจังหวะ'});

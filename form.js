@@ -233,7 +233,7 @@ const Form = (() => {
             <a class="vid" data-save>💾 ${t('fc_save')}</a></div>` : ''}
         <div class="card"><b>${t('fc_check')}</b>${guideBlock(exId, 'fcfig')}${cues.map((c, i) => `<label class="row" style="margin:6px 0"><input type="checkbox"> <small>${c}</small></label>`).join('')}</div>
         <button class="btn ghost" data-again>↺ ${t('fc_again')}</button>`;
-      startAnim(document.getElementById('fcfig'), x.anim);
+      startAnim(document.getElementById('fcfig'), x.anim, {areas:x.p});
       if(S.url){
         video.srcObject = null; video.src = S.url; video.controls = true; video.muted = true;
         cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);

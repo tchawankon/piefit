@@ -300,7 +300,7 @@ const Yoga = (() => {
         ${figSVG('figure')}<small>${L(v.d)}</small></div>
       ${p.lv.map((x, i) => `<div class="setrow"><span>${'●'.repeat(i + 1)}${'○'.repeat(2 - i)}</span><small class="grow">${L(x.n)}</small>${cur === i + 1 ? '✓' : ''}</div>`).join('')}
       <small class="note">${t('yg_safety')}</small>`;
-    startAnim(document.getElementById('figure'), {A:p.base, B:v.pose, deco:p.deco});
+    startAnim(document.getElementById('figure'), {A:p.base, B:v.pose, deco:p.deco}, {areas:p.a});
     $('#back').onclick = () => go('yoga', {name:'home', lib:p.kind ? 'stretch' : 'yoga'});
     on('[data-yshow]', el => { view.show = +el.dataset.yshow; render(); });
     if($('#ysetl')) $('#ysetl').onclick = () => { YLVL[id] = show; YFEEL[id] = 0; save(); render(); };
@@ -351,7 +351,7 @@ const Yoga = (() => {
       <div class="card center"><small id="yph">${v.phase === 'prep' ? t('yg_getready') : t('yg_hold')}</small><b class="bigtime" id="yt">${fmtTime(v.remain)}</b>
         <div class="row gap"><button class="btn ghost" id="yprev" ${v.i === 0 ? 'disabled' : ''}>←</button><button class="btn" id="ypause">${v.paused ? '▶ ' + t('yg_resume') : '⏸ ' + t('yg_pause')}</button><button class="btn ghost" id="ynext">⏭</button></div></div>
       ${next ? `<small class="note">${t('up_next')}: ${L(POSES[next.id].n)}${next.side === 2 ? ' (' + t('yg_side2') + ')' : ''}</small>` : ''}`;
-    startAnim(document.getElementById('figure'), {A:p.base, B:lvl.pose, deco:p.deco});
+    startAnim(document.getElementById('figure'), {A:p.base, B:lvl.pose, deco:p.deco}, {areas:p.a});
     if(v.iv) clearInterval(v.iv);
     let last = -1; v.end = Date.now() + v.remain * 1000;
     const tick = () => {
