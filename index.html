@@ -112,6 +112,35 @@ details.how summary::after{content:' ▾';color:var(--mute)} details.how[open] s
 .tag{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--card);border:1px solid var(--line);color:var(--mute)}
 .hero-top{text-align:center;padding:18px 0 8px}.logo{font-size:44px;color:var(--accent);line-height:1}
 .vid{display:block;text-align:center;margin:14px 0}
+.seg.scroll{overflow-x:auto;scrollbar-width:none}.seg.scroll::-webkit-scrollbar{display:none}.seg.scroll button{flex:0 0 auto;padding:11px 14px}
+.weekstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:0 0 10px}
+.wd{background:var(--card);border:1px solid var(--line);border-radius:10px;text-align:center;padding:4px 0;opacity:.6}
+.wd.on{opacity:1}.wd.done{background:var(--ok);border-color:var(--ok);color:#fff;opacity:1}.wd.done small{color:#fff}
+.wd.today{outline:2px solid var(--accent)}.wd span{display:block;font-size:16px}
+.item.pair{border-left:4px solid var(--accent)}.item.pa{margin-bottom:2px;border-bottom-left-radius:4px}.item.pb{border-top-left-radius:4px}
+#chat{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.msg{padding:10px 12px;border-radius:14px;max-width:88%;font-size:15px;line-height:1.45}
+.msg.user{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}
+.msg.assistant{align-self:flex-start;background:var(--card);border:1px solid var(--line)}
+textarea.inp{resize:vertical;min-height:48px}
+.formm .sheet{max-width:560px}
+.stage{position:relative;background:#000;border-radius:14px;overflow:hidden;min-height:180px}
+.stage video,.stage canvas{display:block;width:100%;height:auto;max-height:60vh;object-fit:contain}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hud{position:absolute;left:8px;top:8px;right:8px;display:flex;align-items:center;gap:10px;pointer-events:none}
+.hud b{font-size:40px;color:#fff;text-shadow:0 2px 6px #000;font-variant-numeric:tabular-nums}
+.hud small{color:#fff;text-shadow:0 1px 4px #000;font-size:15px}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.photos figure,.cmp figure,.sheet figure{margin:0}
+.photos img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;display:block}
+.photos figure.sel img{outline:3px solid var(--accent)}
+figcaption{font-size:11px;color:var(--mute);text-align:center}
+.sheet img{width:100%;border-radius:12px;display:block}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.chart{width:100%;height:auto;display:block;margin:6px 0}
+.chart .axis{stroke:var(--line);stroke-width:1}.chart .line{fill:none;stroke:var(--accent);stroke-width:2.5}
+.chart .pt{fill:var(--accent)}.chart .lab{fill:var(--mute);font-size:10px}
+label.row{gap:8px;cursor:pointer}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);
   padding:10px 16px;border-radius:12px;z-index:9;font-size:14px;max-width:90vw;text-align:center}
 </style>
@@ -122,7 +151,11 @@ details.how summary::after{content:' ▾';color:var(--mute)} details.how[open] s
 <script src="native.js"></script>
 <script src="data.js"></script>
 <script src="i18n.js"></script>
+<script src="i18n-trainer.js"></script>
 <script src="sound.js"></script>
+<script src="coach.js"></script>
+<script src="body.js"></script>
+<script src="form.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -33,10 +33,12 @@ function loadState(){
   }
   if(!VENUE_EQ[SET.venue]) SET.venue = 'rings';
   SET.sfx = Object.assign({}, SET_DEFAULT.sfx, isObj(SET.sfx) ? SET.sfx : {});
+  Coach.load(); Body.load();
 }
 function persist(){
   store.set('log', LOG); store.set('mastered', MASTERED); store.set('news', NEWS);
   store.set('targets', TG); store.set('cal', CAL); store.set('settings', SET);
+  Coach.save();
 }
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -134,7 +136,7 @@ function sessionsOf(id, withCal){
 }
 function progressOf(id){
   const g = goal(id), h = sessionsOf(id); let streak = 0;
-  for(let i = h.length - 1; i >= 0; i--){ if(h[i].sets.filter(s => s.reps >= g.reps).length >= g.sets) streak++; else break; }
+  for(let i = h.length - 1; i >= 0; i--){ if(h[i].sets.filter(s => s.reps >= g.reps && (s.rpe || 2) < 4).length >= g.sets) streak++; else break; }
   return {g, streak: Math.min(streak, g.sessions)};
 }
 const mastered = id => !!MASTERED[id];
@@ -246,8 +248,11 @@ function suggest(id){
       const lw = Math.max(...last.sets.map(s => s.w || 0));
       const atTop = last.sets.filter(s => (s.w || 0) >= lw && s.reps >= hi).length;
       const missed = last.sets.filter(s => s.reps < lo).length;
-      if(atTop >= SETS){ out.w = lw + inc; out.note = t('sg_add', inc); }
+      const failed = last.sets.some(s => s.rpe === 4), easy = last.sets.every(s => s.rpe === 1);
+      if(atTop >= SETS && failed){ out.w = lw; out.reps = hi; out.note = t('sg_hard_keep'); }
+      else if(atTop >= SETS){ out.w = lw + inc; out.note = t('sg_add', inc); }
       else if(missed >= 2){ out.w = roundTo(lw * .9, inc); out.note = t('sg_reduce'); }
+      else if(easy){ out.w = lw + inc; out.note = t('sg_easy_add', inc); }
       else { out.w = lw; out.reps = Math.min(hi, Math.max(lo, Math.min(...last.sets.map(s => s.reps)) + 1)); out.note = t('sg_same'); }
     } else if(cal && cal.w != null){
       out.w = Math.max(inc, Math.floor(e1rm(cal.w, cal.reps) / (1 + (lo + 2)/30) / inc) * inc); out.note = t('sg_fromtest');
@@ -256,7 +261,10 @@ function suggest(id){
     const step = x.hold ? 5 : 1;
     if(last){
       const reps = last.sets.map(s => s.reps), best = Math.max(...reps), worst = Math.min(...reps);
-      if(reps.filter(r => r >= hi).length >= SETS){ out.reps = hi; out.note = gated(id) ? t('sg_bw_top_path') : t('sg_bw_top'); }
+      const failed = last.sets.some(s => s.rpe === 4), easy = last.sets.every(s => s.rpe === 1);
+      if(reps.filter(r => r >= hi).length >= SETS && failed){ out.reps = hi; out.note = t('sg_bw_hard'); }
+      else if(reps.filter(r => r >= hi).length >= SETS){ out.reps = hi; out.note = gated(id) ? t('sg_bw_top_path') : t('sg_bw_top'); }
+      else if(easy && best >= lo){ out.reps = Math.min(hi, worst + step * 2); out.note = t('sg_bw_easy'); }
       else if(best < lo){ out.reps = Math.max(1, best); out.note = EASIER[id] ? t('sg_bw_low') : t('sg_low_adj'); out.easier = true; }
       else { out.reps = Math.min(hi, Math.max(lo, worst + step)); out.note = t('sg_bw_more'); }
     } else if(cal){
@@ -352,6 +360,7 @@ function musclesChips(x){
 function segHTML(name, opts, cur){
   return `<div class="seg">${opts.map(([k, l]) => `<button data-${name}="${k}" class="${cur === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 }
+const venueName = v => v === 'trx' ? 'TRX' : t('v_' + v);
 const venueSeg = () => segHTML('venue', [['rings', '🔘 ' + t('v_rings')], ['trx', '🎗 TRX'], ['cali', '🤸 ' + t('v_cali')], ['gym', '🏋️ ' + t('v_gym')]], SET.venue);
 function warnBlock(id){ const w = exText(id, 'warn'); return w ? `<div class="card warn"><b>⚠ ${t('caution')}</b><br>${w}</div>` : ''; }
 function goalBlock(id){
@@ -424,13 +433,13 @@ function render(){
   if(view.timer){ clearInterval(view.timer.iv); view.timer = null; }
   document.documentElement.lang = SET.lang;
   if(!SET.onboarded && view.name !== 'onboard') view = {name:'onboard'};
-  const full = ['run','onboard','summary'].includes(view.name);
+  const full = ['run','onboard','summary','routine'].includes(view.name);
   nav.style.display = full ? 'none' : 'flex';
   document.body.classList.toggle('nonav', full);
   nav.innerHTML = TABS.map(([k, i, l]) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}"><span class="ic">${i}</span>${t(l)}</button>`).join('');
   nav.querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.tab));
   const V = {session:sessionView, run:runView, summary:summaryView, onboard:onboardView, detail:detailView,
-    paths:pathsView, guide:guideView, settings:settingsView};
+    paths:pathsView, guide:guideView, settings:settingsView, routine:Coach.routineView, plan:Coach.planView, profile:Coach.profileView, coach:Coach.AI.view};
   if(view.name === 'home') ({home:homeView, lib:libView, prog:progView, more:moreView})[tab]();
   else V[view.name]();
 }
@@ -456,6 +465,7 @@ function onboardView(){
 /* ================= home ================= */
 function homeView(){
   const wk = weekSets(), rec = recentMuscles();
+  const plan = Coach.planToday(), dl = Coach.deloadAdvice(), tips = Coach.insights();
   const ranked = SESSIONS.filter(s => !s.cal).map(s => [s, sessionScore(s, wk, rec)]).filter(e => e[1] > -1).sort((a, b) => b[1] - a[1]);
   const best = ranked.length ? ranked[0][0] : null;
   const keys = Object.keys(MUSCLES);
@@ -472,9 +482,21 @@ function homeView(){
       <div class="row" style="margin-top:10px"><button class="btn" id="resume">${t('resume')}</button><button class="btn ghost w-auto" id="discard">${t('discard')}</button></div></div>` : ''}
     ${NEWS.map((n, i) => `<div class="card warn row"><div class="grow">${newsText(n)}</div><button class="chip" data-news="${i}">OK</button></div>`).join('')}
     ${!Object.keys(CAL).length ? `<div class="card hl"><b>🧪 ${t('cal_card_title')}</b><p class="sub" style="margin:4px 0 10px">${t('cal_card_body')}</p><button class="btn" id="calgo">${t('cal_start')}</button></div>` : ''}
+    ${plan ? Coach.stripHTML(plan) : ''}
+    ${plan && plan.next && !plan.trainedToday && (plan.trainDay || plan.missed) ? `<div class="card hero sess" data-plan="${plan.next}"><small>${plan.trainDay ? t('pl_today') : t('pl_missed', plan.missed)}</small>
+      <div class="row"><div class="emoji">${SESSIONS.find(x => x.id === plan.next).icon}</div><div class="grow"><h2 style="margin:0">${sessionName(plan.next)}</h2>
+      <small>${venueName(plan.venue)} · ${plan.min} ${t('minutes')}</small></div><span class="go">›</span></div></div>`
+      : plan && plan.trainedToday ? `<div class="card hl"><b>✅ ${t('pl_done_today')}</b>${plan.next ? `<br><small>${t('pl_next', sessionName(plan.next))}</small>` : ''}</div>`
+      : plan && !plan.next ? `<div class="card hl"><b>🎉 ${t('pl_week_done')}</b></div>` : ''}
+    ${Coach.deloadOn() ? `<div class="card warn row"><div class="grow">🛌 ${t('dl_on', new Date(Coach.prof.deloadUntil).toLocaleDateString())}</div><button class="chip" id="dloff">${t('dl_stop')}</button></div>`
+      : dl ? `<div class="card warn"><b>🛌 ${t('dl_title')}</b><br><small>${dl}</small><button class="btn ghost small" id="dlon" style="margin-top:8px">${t('dl_start')}</button></div>` : ''}
     <div class="lbl-sm">${t('ob_where')}</div>${venueSeg()}
-    ${best ? `<div class="card hero sess" data-s="${best.id}"><small>${t('suggest_today')}</small>
+    ${best && !(plan && plan.next && !plan.trainedToday && (plan.trainDay || plan.missed)) ? `<div class="card ${plan ? '' : 'hero'} sess" data-s="${best.id}"><small>${t('suggest_today')}</small>
       <div class="row"><div class="emoji">${best.icon}</div><div class="grow"><h2 style="margin:0">${sessionName(best.id)}</h2><small>${reason}</small></div><span class="go">›</span></div></div>` : ''}
+    <div class="card"><div class="row"><b class="grow">💬 ${t('in_title')}</b>${Coach.AI.ready() ? `<button class="chip" id="askai">🤖 ${t('ai_ask')}</button>` : ''}</div>
+      ${tips.slice(0, 3).map(([i, x]) => `<div class="row" style="margin-top:8px"><span>${i}</span><small class="grow">${x}</small></div>`).join('')}
+      <button class="chip" id="moretips" style="margin-top:8px">${t('in_more')} ›</button></div>
+    ${Coach.goals.length ? Coach.goalCard(Coach.goals[0]) : ''}
     <div class="card"><div class="row"><b class="grow">${t('week_progress')}</b><b>${pct}%</b></div>
       <div class="track big"><div class="fill" style="width:${pct}%"></div></div>
       ${need.length ? `<small>${t('still_needed')}</small><div class="chips">${need.map(m => `<span class="chip p">${M(m)} ${Math.ceil(target(m) - wk[m])}</span>`).join('')}</div>` : `<small>🎉 ${t('all_done')}</small>`}
@@ -489,6 +511,11 @@ function homeView(){
   on('[data-venue]', el => { SET.venue = el.dataset.venue; persist(); render(); });
   on('[data-s]', el => go('home', {name:'session', s:el.dataset.s}));
   if($('#calgo')) $('#calgo').onclick = () => go('home', {name:'session', s:'cal'});
+  on('[data-plan]', () => { SET.venue = plan.venue; persist(); go('home', {name:'session', s:plan.next, budget:plan.min}); });
+  if($('#dlon')) $('#dlon').onclick = () => { Coach.startDeload(); render(); };
+  if($('#dloff')) $('#dloff').onclick = () => { Coach.stopDeload(); render(); };
+  if($('#askai')) $('#askai').onclick = () => go('more', {name:'coach'});
+  $('#moretips').onclick = () => { progSub = 'review'; go('prog'); };
   if($('#resume')) $('#resume').onclick = () => { Native.prepare(); if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
   if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };
 }
@@ -502,8 +529,14 @@ function lastDone(sid){
 /* ================= session preview ================= */
 function sessionView(){
   const s = SESSIONS.find(x => x.id === view.s);
-  if(!view.list) view.list = buildList(s, SET.venue);
-  const list = view.list, rec = recentMuscles(), prim = new Set();
+  if(!view.list){
+    const lim = s.cal ? {list:buildList(s, SET.venue), changes:[]} : Coach.applyLimits(buildList(s, SET.venue), SET.venue);
+    view.list = lim.list; view.limChanges = lim.changes;
+  }
+  if(view.budget == null) view.budget = 0;
+  const P = Coach.prof, mod = Coach.dayMod(null);
+  const fit = s.cal ? {list:view.list, sets:1, pairs:{}, est:0, changed:[]} : Coach.fit(view.list, view.budget, mod.sets);
+  const list = fit.list, rec = recentMuscles(), prim = new Set();
   list.forEach(id => EX[id].p.forEach(m => prim.add(m)));
   const hit = [...prim].filter(m => rec.has(m));
   app.innerHTML = `<button class="chip" id="back">← ${t('back')}</button>
@@ -511,31 +544,53 @@ function sessionView(){
     ${venueSeg()}
     ${s.cal ? `<div class="card hl"><small>${t('cal_intro')}</small></div>` : ''}
     ${hit.length && !s.cal ? `<div class="card warn"><small>⏳ ${t('recent_warn', hit.map(M).join(', '))}</small></div>` : ''}
+    ${Coach.deloadOn() && !s.cal ? `<div class="card warn"><small>🛌 ${t('dl_session')}</small></div>` : ''}
+    ${(view.limChanges || []).length ? `<div class="card warn"><small>🩹 ${t('pf_swapped', Coach.areaNames(P.limits))}: ${view.limChanges.map(([a, b]) => exName(a) + ' → ' + (b ? exName(b) : t('pf_dropped'))).join(', ')}</small></div>` : ''}
     ${!['rings','cali'].includes(SET.venue) && s.id === 'skills' ? `<div class="card warn"><small>${t('skills_gym')}</small></div>` : ''}
+    ${s.cal ? '' : `<div class="card"><div class="row"><b class="grow">⏱ ${t('tb_title')}</b><small>${t('tb_est', fit.est)}</small></div>
+      <div class="chips">${[0, 20, 30, 45, 60, 90].map(m => `<button class="chip ${view.budget === m ? 'on' : ''}" data-bud="${m}">${m ? m + ' ' + t('minutes') : t('tb_any')}</button>`).join('')}</div>
+      ${fit.changed.length ? `<small style="display:block;margin-top:6px">${fit.changed.map(c => t('tb_' + c)).join(' · ')}</small>` : ''}
+      <div class="row" style="margin-top:10px"><label class="row grow"><input type="checkbox" id="cwarm" ${P.warm ? 'checked' : ''}> <small>🔥 ${t('rt_warm')}</small></label>
+        <label class="row grow"><input type="checkbox" id="ccool" ${P.cool ? 'checked' : ''}> <small>🧘 ${t('rt_cool')}</small></label></div></div>`}
     <div class="chips" style="margin:0 0 10px">${[...prim].map(m => `<span class="chip p">${M(m)}</span>`).join('')}</div>` +
-    list.map((id, i) => { const x = EX[id], sg = suggest(id);
-      return `<div class="card item"><div class="row"><span class="num">${i + 1}</span>
-        <div class="grow"><b>${x.name}</b><br><small>${s.cal ? t('test_once') : SETS + ' × ' + fmtSet(x, sg.reps, sg.w)} · ${t('eq_' + eqOf(x))}</small></div>
-        <button class="chip mini" data-swap="${i}" aria-label="${t('swap')}">⇄</button><button class="chip mini" data-del="${i}" aria-label="${t('remove')}">✕</button></div></div>`; }).join('') +
+    list.map((id, i) => { const x = EX[id], sg = suggest(id), mate = fit.pairs[i];
+      const src = view.list.indexOf(id);
+      return `<div class="card item ${mate != null ? 'pair' + (mate > i ? ' pa' : ' pb') : ''}"><div class="row"><span class="num">${mate != null ? (mate > i ? 'A' : 'B') : i + 1}</span>
+        <div class="grow"><b>${x.name}</b><br><small>${s.cal ? t('test_once') : fit.sets + ' × ' + fmtSet(x, sg.reps, sg.w)} · ${t('eq_' + eqOf(x))}${mate != null && mate > i ? ' · ⇅ ' + t('tb_superset') : ''}</small></div>
+        <button class="chip mini" data-swap="${src}" aria-label="${t('swap')}">⇄</button><button class="chip mini" data-del="${src}" aria-label="${t('remove')}">✕</button></div></div>`; }).join('') +
     `<button class="btn ghost" id="add">+ ${t('add_ex')}</button>
      <button class="btn sticky" id="go" ${list.length ? '' : 'disabled'}>${s.cal ? t('cal_start') : t('start')}</button>`;
   $('#back').onclick = () => go('home');
   on('[data-venue]', el => { SET.venue = el.dataset.venue; persist(); view.list = null; render(); });
-  on('[data-swap]', el => { const i = +el.dataset.swap, id = list[i];
+  on('[data-bud]', el => { view.budget = +el.dataset.bud; render(); });
+  if($('#cwarm')) $('#cwarm').onchange = e => { P.warm = e.target.checked; Coach.save(); render(); };
+  if($('#ccool')) $('#ccool').onchange = e => { P.cool = e.target.checked; Coach.save(); render(); };
+  on('[data-swap]', el => { const i = +el.dataset.swap, id = view.list[i];
     pickExercise(t('swap') + ': ' + EX[id].name, t('swap_hint'), alternatives(id), nid => { view.list[i] = nid; render(); }); });
   on('[data-del]', el => { view.list.splice(+el.dataset.del, 1); render(); });
-  $('#add').onclick = () => pickExercise(t('add_ex'), t('add_hint'), Object.keys(EX).filter(id => !list.includes(id)), nid => { view.list.push(nid); render(); });
-  $('#go').onclick = () => startWorkout(s.id, list, !!s.cal);
+  $('#add').onclick = () => pickExercise(t('add_ex'), t('add_hint'), Object.keys(EX).filter(id => !view.list.includes(id)), nid => { view.list.push(nid); render(); });
+  $('#go').onclick = () => {
+    if(s.cal) return startWorkout(s.id, list, true);
+    Coach.checkIn(ready => {
+      const m = Coach.dayMod(ready);
+      let l = view.list;
+      if(ready && ready.pain.length){ const r = Coach.applyLimits(l, SET.venue, ready.pain, true); l = r.list; if(r.changes.length) toast(t('ck_swapped', Coach.areaNames(ready.pain))); }
+      const f = Coach.fit(l, view.budget, m.sets);
+      const begin = () => startWorkout(s.id, f.list, false, {sets:f.sets, pairs:f.pairs, ready, wMul:m.wMul, tag:m.tag});
+      if(Coach.prof.warm && f.list.length) Coach.startRoutine('warm', Coach.warmup(f.list), begin); else begin();
+    });
+  };
 }
 
 /* ================= workout ================= */
-function startWorkout(sid, list, cal){
-  Native.prepare();
-  view = {name:'run', s:sid, list:list.slice(), i:0, logged:{}, cal, t0:Date.now(), news0:NEWS.length, results:[]};
+function startWorkout(sid, list, cal, opts){
+  Native.prepare(); opts = opts || {};
+  view = {name:'run', s:sid, list:list.slice(), i:0, logged:{}, cal, t0:Date.now(), news0:NEWS.length, results:[],
+    setsN:opts.sets || SETS, pair:opts.pairs || {}, wMul:opts.wMul || 1, tag:opts.tag || '', rpe:2};
   tab = 'home'; saveActive(); if(SET.music !== 'off') Sound.startMusic(SET.music); render(); window.scrollTo(0, 0);
 }
 function saveActive(){
-  if(view.name === 'run'){ ACTIVE = {s:view.s, list:view.list, i:view.i, logged:view.logged, cal:view.cal, t0:view.t0, news0:view.news0, results:view.results, testNext:view.testNext, rest:view.rest || null}; }
+  if(view.name === 'run'){ ACTIVE = {s:view.s, list:view.list, i:view.i, logged:view.logged, cal:view.cal, t0:view.t0, news0:view.news0, results:view.results, testNext:view.testNext, rest:view.rest || null, setsN:view.setsN, pair:view.pair, wMul:view.wMul, tag:view.tag, rpe:view.rpe}; }
   store.set('active', ACTIVE);
 }
 function loggedSets(i){ return (view.logged[i] || []).map(lid => LOG.find(l => l.id === lid)).filter(Boolean); }
@@ -544,8 +599,11 @@ function runView(){
   if(!id || !EX[id]) return finishWorkout();
   const x = EX[id], [lo, hi] = range(x), sets = loggedSets(view.i);
   const isTest = view.cal || view.testNext === view.i;
-  const work = view.cal ? sets : sets.filter(l => !l.cal), N = view.cal ? 1 : SETS, done = work.length;
+  const work = view.cal ? sets : sets.filter(l => !l.cal), N = view.cal ? 1 : (view.setsN || SETS), done = work.length;
   const sg = suggest(id);
+  if(!isTest && view.wMul && view.wMul < 1 && sg.w != null){ sg.w = roundTo(sg.w * view.wMul, incOf(x)); sg.note = t(view.tag === 'deload' ? 'sg_deload' : 'sg_lowday') + ' ' + sg.note; }
+  if(!isTest && Coach.plateau(id)) sg.note += ' ' + t('sg_plateau');
+  const mate = view.pair ? view.pair[view.i] : null;
   if(view.reps == null) view.reps = isTest ? lo : sg.reps;
   if(x.load && view.w == null) view.w = sg.w;
   const first = !sessionsOf(id, true).length;
@@ -553,7 +611,8 @@ function runView(){
   app.innerHTML = `<div class="runbar"><button class="chip" id="quit">✕</button>
       <div class="track grow"><div class="fill" style="width:${pct}%"></div></div><small>${view.i + 1}/${view.list.length}</small>
       <button class="chip mini" id="music" aria-label="${t('snd_music')}">${Sound.musicOn() ? '🎵' : '🔇'}</button></div>
-    <h1>${x.name}</h1><div class="row wrap"><span class="tag">${t('eq_' + eqOf(x))}</span><span class="tag">${t('lvl_' + x.lvl)}</span></div>${musclesChips(x)}
+    <h1>${x.name}</h1><div class="row wrap"><span class="tag">${t('eq_' + eqOf(x))}</span><span class="tag">${t('lvl_' + x.lvl)}</span>
+      ${mate != null ? `<span class="tag">⇅ ${t('tb_superset')}: ${exName(view.list[mate])}</span>` : ''}${view.tag ? `<span class="tag">${t('tag_' + view.tag)}</span>` : ''}</div>${musclesChips(x)}
     <div style="height:10px"></div>${guideBlock(id, 'figure')}
     ${isTest
       ? `<div class="card hl"><b>🧪 ${t('test_title')}</b><br><small>${x.load ? t('test_load') : x.hold ? t('test_hold') : t('test_bw')}</small></div>`
@@ -565,12 +624,13 @@ function runView(){
       <div class="stepper"><button id="m">−</button><b id="r" class="tap">${view.reps}${x.hold ? 's' : ''}</b><button id="p">+</button></div>
       ${x.load ? `<div class="lbl-sm center">${t('weight')}</div><div class="stepper"><button id="wm">−</button><b id="wv" class="tap wv">${fmtW(x, view.w)}</b><button id="wp">+</button></div>` : ''}
       ${x.hold ? `<button class="btn ghost" id="hold" style="margin-bottom:8px">▶ ${t('hold_start')}</button>` : ''}
+      ${isTest ? '' : `<div class="lbl-sm center">${t('rpe_q')}</div>${segHTML('rpe', [[1, '😌 ' + t('rpe_1')], [2, '🙂 ' + t('rpe_2')], [3, '😤 ' + t('rpe_3')], [4, '🥵 ' + t('rpe_4')]], view.rpe || 2)}`}
       <button class="btn" id="log" ${!isTest && done >= N ? 'disabled' : ''}>${isTest ? t('save_test') : done >= N ? '✓ ' + t('all_sets_done') : t('log_set', done + 1)}</button>
       ${sets.length ? `<div class="sets">${sets.map((l, n) => `<div class="setrow"><span class="num">${l.cal ? '🧪' : n + 1}</span><b class="grow">${fmtSet(x, l.reps, l.w)}</b>
-        <button class="chip mini" data-edit="${l.id}" aria-label="${t('edit')}">✎</button><button class="chip mini" data-delset="${l.id}" aria-label="${t('remove')}">✕</button></div>`).join('')}</div>` : ''}
+        ${l.rpe ? `<small>${['', '😌', '🙂', '😤', '🥵'][l.rpe]}</small>` : ''}<button class="chip mini" data-edit="${l.id}" aria-label="${t('edit')}">✎</button><button class="chip mini" data-delset="${l.id}" aria-label="${t('remove')}">✕</button></div>`).join('')}</div>` : ''}
     </div>
     <div class="row gap">${EASIER[id] && !view.cal ? `<button class="btn ${sg.easier ? '' : 'ghost'} small" id="easy">⬇ ${t('easier')}</button>` : ''}
-      <button class="btn ghost small" id="swap">⇄ ${t('swap')}</button></div>
+      <button class="btn ghost small" id="swap">⇄ ${t('swap')}</button><button class="btn ghost small" id="formck">🎥 ${t('fc_btn')}</button></div>
     <div class="row gap" style="margin-top:8px"><button class="btn ghost" id="prev" ${view.i === 0 ? 'disabled' : ''}>← ${t('prev')}</button>
       <button class="btn ${done >= N ? '' : 'ghost'}" id="next">${view.i === view.list.length - 1 ? t('finish') : t('next') + ' →'}</button></div>
     <div style="height:14px"></div>${warnBlock(id)}${howTo(id, first)}${view.cal ? '' : goalBlock(id)}`;
@@ -597,6 +657,8 @@ function runView(){
       view.timer = tm; }
   };
   $('#log').onclick = () => logSet(id, isTest, done, N);
+  on('[data-rpe]', el => { view.rpe = +el.dataset.rpe; saveActive(); app.querySelectorAll('[data-rpe]').forEach(b => b.classList.toggle('on', b === el)); });
+  $('#formck').onclick = () => Form.open(id, v => { view.reps = Math.max(1, Math.round(v)); showR(); toast(t('fc_used')); });
   $('#music').onclick = () => {
     if(Sound.musicOn()) Sound.stopMusic();
     else { if(SET.music === 'off'){ SET.music = 'focus'; persist(); } Sound.startMusic(SET.music); }
@@ -621,6 +683,7 @@ function logSet(id, isTest, done, N){
   if(view.timer){ clearInterval(view.timer.iv); view.reps = Math.max(1, view.timer.n); view.timer = null; }
   const entry = {id:newId(), t:Date.now(), sess:view.s, ex:id, reps:view.reps};
   if(x.load) entry.w = view.w;
+  if(!isTest) entry.rpe = view.rpe || 2;
   if(isTest) entry.cal = true;
   LOG.push(entry);
   (view.logged[view.i] = view.logged[view.i] || []).push(entry.id);
@@ -643,6 +706,14 @@ function logSet(id, isTest, done, N){
   const nextId = view.list[view.i + 1];
   if(view.cal){ const nn = nextId ? EX[nextId].name : ''; startRest(restFor(x, true), nn, nn, true); }
   else if(isTest){ view.w = null; render(); toast(t('test_saved')); }
+  else if(view.pair && view.pair[view.i] != null){
+    // superset: A -> short break -> B -> full rest -> A ...
+    const mate = view.pair[view.i], mateDone = loggedSets(mate).filter(l => !l.cal).length >= N, first = mate > view.i;
+    if(!mateDone) startRest(first ? 20 : Math.max(restFor(x), restFor(EX[view.list[mate]])), exName(view.list[mate]), EX[view.list[mate]].name, mate);
+    else if(done + 1 < N) startRest(restFor(x), t('set_n', done + 2), tv('set_n', done + 2), false);
+    else if(Math.max(view.i, mate) + 1 < view.list.length) startRest(restFor(x), exName(view.list[Math.max(view.i, mate) + 1]), EX[view.list[Math.max(view.i, mate) + 1]].name, Math.max(view.i, mate) + 1);
+    else render();
+  }
   else if(done + 1 < N) startRest(restFor(x), t('set_n', done + 2), tv('set_n', done + 2), false);
   else render();
 }
@@ -650,6 +721,7 @@ function editSet(lid){
   const l = LOG.find(e => e.id === lid); if(!l) return; const x = EX[l.ex];
   const r = askNum(unitOf(x), l.reps); if(r == null) return; l.reps = Math.max(1, Math.round(r));
   if(x && x.load){ const w = askNum(t('weight') + ' (kg)', l.w); if(w != null) l.w = w; }
+  if(!l.cal){ const e = askNum(t('rpe_edit'), l.rpe || 2); if(e != null) l.rpe = Math.min(4, Math.max(1, Math.round(e))); }
   if(l.cal && CAL[l.ex] && CAL[l.ex].t === l.t) CAL[l.ex] = {t:l.t, reps:l.reps, w:l.w};
   persist(); render();
 }
@@ -663,12 +735,13 @@ function deleteSet(lid){
   persist(); if(view.name === 'run') saveActive(); render();
 }
 function restAfter(next){
-  if(next){ view.i++; view.w = null; }
+  if(typeof next === 'number'){ view.i = next; view.w = null; view.reps = null; }
+  else if(next){ view.i++; view.w = null; }
   view.rest = null; saveActive(); render();
   if(next) window.scrollTo(0, 0);
 }
 function startRest(sec, cue, cueVoice, next, endAt){
-  const r = view.rest = {end: endAt || Date.now() + sec*1000, cue: cue || '', cueVoice: cueVoice || '', next: !!next};
+  const r = view.rest = {end: endAt || Date.now() + sec*1000, cue: cue || '', cueVoice: cueVoice || '', next: typeof next === 'number' ? next : !!next};
   saveActive();
   let last = -1;
   const o = document.createElement('div'); o.className = 'modal restm';
@@ -712,7 +785,13 @@ function finishWorkout(){
   ACTIVE = null; store.set('active', null);
   Sound.stopMusic(); Sound.play('finish'); Sound.vibrate([120, 80, 120, 80, 300]);
   if(ids.length) Sound.say(tv('v_done'));
-  sum.fresh = true; tab = 'home'; view = sum; render(); window.scrollTo(0, 0);
+  sum.fresh = true; tab = 'home';
+  if(Coach.prof.cool && ids.length && !view.cal){
+    const exs = [...new Set(ids.map(i => (LOG.find(l => l.id === i) || {}).ex).filter(e => EX[e]))];
+    Coach.startRoutine('cool', Coach.cooldown(exs), () => { view = sum; render(); window.scrollTo(0, 0); });
+    return;
+  }
+  view = sum; render(); window.scrollTo(0, 0);
 }
 function summaryView(){
   const logs = view.ids.map(lid => LOG.find(l => l.id === lid)).filter(Boolean);
@@ -787,9 +866,9 @@ function detailView(){
 /* ================= progress ================= */
 let progSub = 'week';
 function progView(){
-  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['week', t('p_week')], ['hist', t('p_hist')], ['base', t('p_base')]], progSub)}<div id="pbody"></div>`;
+  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
   on('[data-sub]', el => { progSub = el.dataset.sub; render(); });
-  ({week:progWeek, hist:progHist, base:progBase})[progSub]($('#pbody'));
+  ({week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, base:progBase})[progSub]($('#pbody'));
 }
 function progWeek(box){
   const wk = weekSets(), since = Date.now() - 7*DAY, rec = recentMuscles();
@@ -815,7 +894,7 @@ function progHist(box){
   [...LOG].sort((a, b) => b.t - a.t).forEach(l => { const k = dayKey(l.t); if(!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(l); });
   box.innerHTML = byDay.size ? [...byDay.entries()].slice(0, 30).map(([k, ls]) => `<div class="card"><b>${new Date(ls[0].t).toLocaleDateString(SET.lang === 'th' ? 'th-TH' : undefined, {weekday:'short', day:'numeric', month:'short'})}</b>
       <small> · ${t('n_sets', ls.length)}</small>
-      ${ls.map(l => { const x = EX[l.ex]; return `<div class="setrow"><span class="grow">${l.cal ? '🧪 ' : ''}${x ? x.name : esc(l.ex)}</span><b>${x ? fmtSet(x, l.reps, l.w) : l.reps}</b>
+      ${ls.map(l => { const x = EX[l.ex]; return `<div class="setrow"><span class="grow">${l.cal ? '🧪 ' : ''}${x ? x.name : esc(l.ex)}</span><b>${x ? fmtSet(x, l.reps, l.w) : l.reps}</b>${l.rpe ? `<small>${['', '😌', '🙂', '😤', '🥵'][l.rpe]}</small>` : ''}
         <button class="chip mini" data-edit="${l.id}">✎</button><button class="chip mini" data-delset="${l.id}">✕</button></div>`; }).join('')}</div>`).join('')
     : `<div class="card"><small>${t('no_sets')}</small></div>`;
   on('[data-edit]', el => editSet(el.dataset.edit), box);
@@ -838,6 +917,9 @@ function progBase(box){
 /* ================= more: paths, guide, settings, backup ================= */
 function moreView(){
   app.innerHTML = `<h1>${t('tab_more')}</h1>
+    <div class="card sess row" data-v="plan"><span class="emoji">📅</span><div class="grow"><b>${t('pl_title')}</b><br><small>${t('pl_sub')}</small></div><span class="go">›</span></div>
+    <div class="card sess row" data-v="profile"><span class="emoji">🩹</span><div class="grow"><b>${t('pf_title')}</b><br><small>${t('pf_sub')}</small></div><span class="go">›</span></div>
+    <div class="card sess row" data-v="coach"><span class="emoji">🤖</span><div class="grow"><b>${t('ai_title')}</b><br><small>${Coach.AI.ready() ? t('ai_sub_on') : t('ai_sub_off')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="paths"><span class="emoji">🪜</span><div class="grow"><b>${t('paths')}</b><br><small>${t('paths_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="guide"><span class="emoji">🌱</span><div class="grow"><b>${t('guide')}</b><br><small>${t('guide_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="settings"><span class="emoji">⚙️</span><div class="grow"><b>${t('settings')}</b><br><small>${t('settings_sub')}</small></div><span class="go">›</span></div>
@@ -928,11 +1010,14 @@ function settingsView(){
   });
   $('#wipe').onclick = () => {
     if(!confirm(t('clear_confirm'))) return;
-    LOG = []; MASTERED = {}; NEWS = []; CAL = {}; ACTIVE = null; store.set('active', null); persist(); toast(t('cleared')); render();
+    LOG = []; MASTERED = {}; NEWS = []; CAL = {}; ACTIVE = null; store.set('active', null);
+    Coach.importState({checks:[], goals:[]}); Body.entries = []; store.set('chat', []);
+    try { indexedDB.deleteDatabase('piefit'); } catch(e){}
+    persist(); toast(t('cleared')); render();
   };
 }
 function exportData(){
-  const data = {app:'piefit', version:2, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET};
+  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries}, Coach.exportState());
   const name = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => alert(t('export_fail'))); return; }
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
@@ -950,7 +1035,9 @@ function importData(file){
     if(!confirm(t('import_confirm', d.log.length))) return;
     LOG = d.log.filter(l => l && typeof l.ex === 'string' && typeof l.t === 'number' && typeof l.reps === 'number')
       .map((l, i) => { const o = {id: typeof l.id === 'string' ? l.id : l.t + '-' + i, t:l.t, sess:String(l.sess || ''), ex:l.ex, reps:l.reps};
-        if(typeof l.w === 'number') o.w = l.w; if(l.cal) o.cal = true; return o; });
+        if(typeof l.w === 'number') o.w = l.w; if(l.cal) o.cal = true; if([1, 2, 3, 4].includes(l.rpe)) o.rpe = l.rpe; return o; });
+    Coach.importState(d);
+    if(Array.isArray(d.body)) Body.entries = d.body.filter(e => isObj(e) && typeof e.t === 'number');
     MASTERED = isObj(d.mastered) ? d.mastered : {};
     NEWS = Array.isArray(d.news) ? d.news.filter(n => typeof n === 'string' || isObj(n)) : [];
     if(isObj(d.targets)){ TG = {type: BASE_TARGET[d.targets.type] ? d.targets.type : 'general', custom: isObj(d.targets.custom) ? d.targets.custom : {}}; }
