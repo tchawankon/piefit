@@ -382,3 +382,49 @@ EX.wheelstand.anim = {prop:'bb',
   A:{h:[104,96],s:[90,100],e:[96,114],w:[100,128],p:[56,70],k:[46,104],f:[40,134]},
   B:{h:[138,118],s:[126,124],e:[138,126],w:[150,128],p:[70,128],k:[44,131],f:[20,134]}};
 LADDERS.push(['Ab wheel path', ['falloutknee','wheelknee','wheelstand']]);
+
+// ---- calisthenics (bodyweight, pull-up bar, dip bars)
+EX.hollow.eq = 'floor'; EX.pikefloor.eq = 'floor';
+const BARLINE = y => [['l', 70, y, 130, y]];
+Object.assign(EX, {
+  australian:G('Australian Pull-up (bar row)','bar','hpull',['lats','upperback','biceps'],['core'],'8-15',{
+    cues:['Low bar at about hip height, hang underneath with straight arms','Body straight from heels to head','Pull the chest to the bar, squeeze the shoulder blades','Bend the knees to make it easier, raise the feet to make it harder']}),
+  negbar:G('Negative Pull-up (bar)','bar','vpull',['lats','biceps','upperback'],['core'],'3-5',{
+    cues:['Jump or step up so your chin is over the bar','Lower as slowly as you can, aim for 4-5 seconds','Go all the way to straight arms','Shoulders stay down, no shrugging']}),
+  chinup:G('Chin-up','bar','vpull',['biceps','lats'],['upperback','core'],'3-8',{lvl:2,
+    cues:['Palms facing you, shoulder-width grip','Pull until the chin is over the bar','Lower fully with control']}),
+  bardip:G('Parallel Bar Dip','bar','hpush',['chest','triceps','shoulders'],['core'],'5-10',{lvl:2,
+    cues:['Start locked out on the bars, shoulders down','Lean slightly forward and lower until the shoulders are just below the elbows','Press back up to straight arms','Easier: bench dips or slow negatives']}),
+  diamond:G('Diamond Push-up','floor','triceps',['triceps'],['chest','shoulders'],'6-12',{
+    cues:['Hands close together under the chest, thumbs and index fingers touching','Elbows stay close to the body','Lower the chest to the hands, press up','Easier: from the knees']}),
+  bwsquat:G('Bodyweight Squat','floor','squat',['quads','glutes'],['core'],'12-20',{
+    cues:['Feet about shoulder width, toes slightly out','Sit down and back, chest tall, arms forward for balance','Go as deep as you can with a flat back, drive up']}),
+  revlunge:G('Reverse Lunge','floor','lunge',['quads','glutes'],['hamstrings','core'],'8-12 / leg',{
+    cues:['Step one foot back, lower until both knees are about 90°','Front knee over the foot, torso tall','Push through the front heel to stand back up']}),
+  glutebridge:G('Glute Bridge','floor','hipext',['glutes'],['hamstrings','core'],'12-20',{
+    cues:['Lie on your back, knees bent, feet flat','Drive the hips up until the body is straight from knees to shoulders','Squeeze the glutes at the top, lower slowly','Harder: single-leg bridge']}),
+  handstand:G('Wall Handstand Hold','floor','vpush',['shoulders','triceps'],['core'],'15-45s',{lvl:3, hold:true,
+    warn:'Learn to come down safely first (cartwheel out or walk the feet down). Stop if you feel wrist or shoulder pain.',
+    cues:['Hands about shoulder width, a hand-length from the wall','Kick up or walk the feet up the wall','Push the floor away, arms locked, ribs in','Start with short holds and build up']})
+});
+EX.australian.anim = Object.assign({}, EX.row.anim, {grip:null, deco:BARLINE(52)});
+EX.negbar.anim = Object.assign({}, EX.pullup.anim, {grip:null, deco:BARLINE(22)});
+EX.chinup.anim = EX.negbar.anim;
+EX.bardip.anim = Object.assign({}, EX.dip.anim, {grip:null, deco:[['l', 88, 72, 132, 72], ['l', 128, 72, 128, 134]]});
+EX.diamond.anim = EX.floorpush.anim;
+EX.bwsquat.anim = {
+  A:{h:[88,22],s:[88,38],e:[100,44],w:[114,46],p:[86,78],k:[88,108],f:[90,134]},
+  B:{h:[84,48],s:[78,62],e:[96,64],w:[114,64],p:[60,98],k:[104,98],f:[96,134]}};
+EX.revlunge.anim = {
+  A:{h:[98,24],s:[95,38],e:[95,56],w:[97,72],p:[95,72],k:[98,102],f:[100,132],k2:[92,102],f2:[90,132]},
+  B:{h:[98,50],s:[95,64],e:[95,82],w:[97,96],p:[95,98],k:[120,102],f:[118,132],k2:[80,128],f2:[56,130]}};
+EX.glutebridge.anim = {
+  A:{h:[20,124],s:[34,126],e:[50,130],w:[64,132],p:[76,128],k:[104,104],f:[112,132]},
+  B:{h:[20,124],s:[34,126],e:[50,130],w:[64,132],p:[80,104],k:[108,100],f:[112,132]}};
+EX.handstand.anim = {deco:[['l', 88, 0, 88, 136]],
+  A:{h:[122,98],s:[112,98],e:[115,116],w:[118,134],p:[70,58],k:[46,94],f:[22,130]},
+  B:{h:[104,114],s:[104,100],e:[104,117],w:[104,134],p:[100,62],k:[96,36],f:[94,10]}};
+LADDERS.push(['Bar pull-up path', ['australian','negbar','pullupbar']]);
+LADDERS.push(['Dip path', ['floorpush','bardip']]);
+LADDERS.push(['Handstand path', ['pikefloor','handstand']]);
+EXTRA_PRE.chinup = ['negbar'];

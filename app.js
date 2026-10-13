@@ -11,7 +11,7 @@ const store = {
   set(k, v){ try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch(e){} }
 };
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
-const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, onboarded:false};
+const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, vol:0.7, voice:true, voiceLang:'en', vib:true, music:'off', onboarded:false};
 let LOG, MASTERED, NEWS, TG, CAL, SET, ACTIVE;
 function loadState(){
   LOG = store.get('log', []); if(!Array.isArray(LOG)) LOG = [];
@@ -39,11 +39,14 @@ function persist(){
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 /* ================= i18n ================= */
-function t(k, ...a){
-  let s = (STR[SET.lang] && STR[SET.lang][k]) || STR.en[k] || k;
+function tl(lang, k, ...a){
+  let s = (STR[lang] && STR[lang][k]) || STR.en[k] || k;
   a.forEach((v, i) => { s = s.split('{' + i + '}').join(v); });
   return s;
 }
+const t = (k, ...a) => tl(SET.lang, k, ...a);
+// spoken cues use their own language (English by default, the Thai phone voices sound unnatural)
+const tv = (k, ...a) => tl(SET.voiceLang, k, ...a);
 const M = m => t('m_' + m);
 const esc = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function exText(id, field){
@@ -59,7 +62,7 @@ const SETS = 3;
 const DAY = 864e5;
 const EQ_KEYS = ['rings','trx','abwheel','barbell','dumbbell','machine','cable','bar','floor'];
 // equipment usable at each training place
-const VENUE_EQ = {rings:['rings','floor','abwheel'], trx:['trx','floor','abwheel'], gym:['barbell','dumbbell','machine','cable','bar','floor','abwheel']};
+const VENUE_EQ = {rings:['rings','floor','abwheel'], trx:['trx','floor','abwheel'], cali:['floor','bar','abwheel'], gym:['barbell','dumbbell','machine','cable','bar','floor','abwheel']};
 const atVenue = (x, v) => VENUE_EQ[v].includes(eqOf(x));
 const eqOf = x => x.eq || 'rings';
 const kindOf = x => x.hold ? 'hold' : (x.kind || 'strength');
@@ -156,16 +159,19 @@ function newsText(n){
 /* ================= sessions & lists ================= */
 const SESSIONS = [
   {id:'push', icon:'💪', ex:['pushup','pike','dip','tricep','fallout'], gymExtra:['lateral']},
-  {id:'pull', icon:'🧗', ex:['row','pullup','facepull','curl','hollow']},
-  {id:'legs', icon:'🦵', ex:['split','slrdl','hamcurl','calfraise','fallout'], gymExtra:['legpress']},
+  {id:'pull', icon:'🧗', ex:['row','pullup','facepull','curl','hollow'], caliExtra:['hangleg']},
+  {id:'legs', icon:'🦵', ex:['split','slrdl','hamcurl','calfraise','fallout'], gymExtra:['legpress'], caliExtra:['bwsquat','glutebridge']},
   {id:'skills', icon:'🤸', ex:['support','rtosupport','planchelean','hollow','tucklever','skincat']},
-  {id:'full', icon:'⚡', ex:['pushup','row','split','fallout','support'], gymExtra:['legpress','dbshoulder']},
+  {id:'full', icon:'⚡', ex:['pushup','row','split','fallout','support'], gymExtra:['legpress','dbshoulder'], caliExtra:['bwsquat','pikefloor']},
   {id:'auto', icon:'🎯', auto:true, ex:[]},
   {id:'cal', icon:'🧪', cal:true, ex:[]}
 ];
-const CAL_LIST = {rings:['row','inclinepush','ringsquat','support','deadhang','hollow'], trx:['trxrow','trxpush','trxsquat','trxhamcurl','plank'], gym:['dbbench','latpull','cablerow','legpress','dbshoulder','plank']};
+const CAL_LIST = {rings:['row','inclinepush','ringsquat','support','deadhang','hollow'], trx:['trxrow','trxpush','trxsquat','trxhamcurl','plank'], cali:['australian','floorpush','bwsquat','glutebridge','plank','hollow'], gym:['dbbench','latpull','cablerow','legpress','dbshoulder','plank']};
 const TRX_DEFAULT = {hpush:'trxpush', hpull:'trxrow', vpull:'trxrow', reardelt:'trxface', biceps:'trxcurl', triceps:'trxtricep', squat:'trxsquat',
   lunge:'trxlunge', legcurl:'trxhamcurl', core:'trxfallout', vpush:'pikefloor', hinge:'slrdl', calf:'calfraise'};
+const CALI_DEFAULT = {hpush:'floorpush', vpush:'pikefloor', triceps:'diamond', vpull:'pullupbar', hpull:'australian', reardelt:'australian',
+  biceps:'chinup', core:'hollow', squat:'bwsquat', lunge:'revlunge', legcurl:'slrdl', hinge:'slrdl', hipext:'glutebridge', calf:'calfraise'};
+function caliFor(id){ const x = EX[id]; if(['floor','bar','abwheel'].includes(eqOf(x))) return id; return x.pat && CALI_DEFAULT[x.pat] ? CALI_DEFAULT[x.pat] : null; }
 function trxFor(id){ const x = EX[id]; if(['trx','floor','abwheel'].includes(eqOf(x))) return id; return x.pat && TRX_DEFAULT[x.pat] ? TRX_DEFAULT[x.pat] : null; }
 const GYM_DEFAULT = {hpush:'dbbench', vpush:'dbshoulder', triceps:'pushdown', vpull:'latpull', hpull:'cablerow', reardelt:'cablefacepull',
   biceps:'dbcurl', core:'plank', squat:'legpress', lunge:'dbsplit', legcurl:'legcurl', hinge:'rdl', hipext:'hipthrust', legext:'legext',
@@ -191,7 +197,7 @@ function autoList(venue){
   byNeed(wk).filter(m => !rec.has(m)).slice(0, 3).forEach(m => {
     Object.keys(EX).filter(id => EX[id].p.includes(m) && !EX[id].hold
         && atVenue(EX[id], venue)
-        && (venue !== 'rings' || SET.mode !== 'beginner' || (stepState(id) !== 'locked' && EX[id].lvl <= 2)))
+        && (!['rings','cali'].includes(venue) || SET.mode !== 'beginner' || (stepState(id) !== 'locked' && EX[id].lvl <= 2)))
       .sort((a, b) => (EX[a].p[0] === m ? 0 : 1) - (EX[b].p[0] === m ? 0 : 1) || EX[a].lvl - EX[b].lvl)
       .slice(0, 2).forEach(id => pushUnique(out, id));
   });
@@ -203,6 +209,7 @@ function buildList(s, venue){
   const out = [];
   if(venue === 'gym'){ s.ex.forEach(id => pushUnique(out, gymFor(id))); (s.gymExtra || []).forEach(id => pushUnique(out, id)); }
   else if(venue === 'trx') s.ex.forEach(id => pushUnique(out, trxFor(id)));
+  else if(venue === 'cali') s.ex.concat(s.caliExtra || []).forEach(id => { const c = caliFor(id); pushUnique(out, c && SET.mode === 'beginner' ? resolve(c) : c); });
   else s.ex.forEach(id => pushUnique(out, SET.mode === 'beginner' ? resolve(id) : id));
   return sortList(out);
 }
@@ -342,7 +349,7 @@ function musclesChips(x){
 function segHTML(name, opts, cur){
   return `<div class="seg">${opts.map(([k, l]) => `<button data-${name}="${k}" class="${cur === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 }
-const venueSeg = () => segHTML('venue', [['rings', '🔘 ' + t('v_rings')], ['trx', '🎗 TRX'], ['gym', '🏋️ ' + t('v_gym')]], SET.venue);
+const venueSeg = () => segHTML('venue', [['rings', '🔘 ' + t('v_rings')], ['trx', '🎗 TRX'], ['cali', '🤸 ' + t('v_cali')], ['gym', '🏋️ ' + t('v_gym')]], SET.venue);
 function warnBlock(id){ const w = exText(id, 'warn'); return w ? `<div class="card warn"><b>⚠ ${t('caution')}</b><br>${w}</div>` : ''; }
 function goalBlock(id){
   if(!gated(id)) return '';
@@ -369,14 +376,6 @@ function toast(msg){
 function askNum(label, cur){
   const v = prompt(label, cur); if(v == null) return null;
   const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n >= 0 ? n : null;
-}
-function beep(){
-  if(SET.sound){ try {
-    const C = window.AudioContext || window.webkitAudioContext, c = new C(), o = c.createOscillator(), g = c.createGain();
-    o.frequency.value = 880; g.gain.value = .15; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + .3);
-    setTimeout(() => c.close(), 600);
-  } catch(e){} }
-  try { if(navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e){}
 }
 const fmtTime = s => Math.floor(s/60) + ':' + String(s % 60).padStart(2, '0');
 function pickExercise(title, hint, ids, onPick){
@@ -474,7 +473,7 @@ function homeView(){
   on('[data-venue]', el => { SET.venue = el.dataset.venue; persist(); render(); });
   on('[data-s]', el => go('home', {name:'session', s:el.dataset.s}));
   if($('#calgo')) $('#calgo').onclick = () => go('home', {name:'session', s:'cal'});
-  if($('#resume')) $('#resume').onclick = () => { view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
+  if($('#resume')) $('#resume').onclick = () => { if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
   if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };
 }
 function lastDone(sid){
@@ -496,7 +495,7 @@ function sessionView(){
     ${venueSeg()}
     ${s.cal ? `<div class="card hl"><small>${t('cal_intro')}</small></div>` : ''}
     ${hit.length && !s.cal ? `<div class="card warn"><small>⏳ ${t('recent_warn', hit.map(M).join(', '))}</small></div>` : ''}
-    ${SET.venue !== 'rings' && s.id === 'skills' ? `<div class="card warn"><small>${t('skills_gym')}</small></div>` : ''}
+    ${!['rings','cali'].includes(SET.venue) && s.id === 'skills' ? `<div class="card warn"><small>${t('skills_gym')}</small></div>` : ''}
     <div class="chips" style="margin:0 0 10px">${[...prim].map(m => `<span class="chip p">${M(m)}</span>`).join('')}</div>` +
     list.map((id, i) => { const x = EX[id], sg = suggest(id);
       return `<div class="card item"><div class="row"><span class="num">${i + 1}</span>
@@ -516,7 +515,7 @@ function sessionView(){
 /* ================= workout ================= */
 function startWorkout(sid, list, cal){
   view = {name:'run', s:sid, list:list.slice(), i:0, logged:{}, cal, t0:Date.now(), news0:NEWS.length, results:[]};
-  tab = 'home'; saveActive(); render(); window.scrollTo(0, 0);
+  tab = 'home'; saveActive(); if(SET.music !== 'off') Sound.startMusic(SET.music); render(); window.scrollTo(0, 0);
 }
 function saveActive(){
   if(view.name === 'run'){ ACTIVE = {s:view.s, list:view.list, i:view.i, logged:view.logged, cal:view.cal, t0:view.t0, news0:view.news0, results:view.results, testNext:view.testNext}; }
@@ -535,7 +534,8 @@ function runView(){
   const first = !sessionsOf(id, true).length;
   const pct = (view.i + Math.min(done, N) / N) / view.list.length * 100;
   app.innerHTML = `<div class="runbar"><button class="chip" id="quit">✕</button>
-      <div class="track grow"><div class="fill" style="width:${pct}%"></div></div><small>${view.i + 1}/${view.list.length}</small></div>
+      <div class="track grow"><div class="fill" style="width:${pct}%"></div></div><small>${view.i + 1}/${view.list.length}</small>
+      <button class="chip mini" id="music" aria-label="${t('snd_music')}">${Sound.musicOn() ? '🎵' : '🔇'}</button></div>
     <h1>${x.name}</h1><div class="row wrap"><span class="tag">${t('eq_' + eqOf(x))}</span><span class="tag">${t('lvl_' + x.lvl)}</span></div>${musclesChips(x)}
     <div style="height:10px"></div>${guideBlock(id, 'figure')}
     ${isTest
@@ -573,9 +573,17 @@ function runView(){
   const hb = $('#hold');
   if(hb) hb.onclick = () => {
     if(view.timer){ clearInterval(view.timer.iv); view.reps = Math.max(1, view.timer.n); view.timer = null; hb.textContent = '▶ ' + t('hold_start'); showR(); }
-    else { hb.textContent = '■ ' + t('hold_stop'); const tm = {n:0}; tm.iv = setInterval(() => { tm.n++; rEl.textContent = tm.n + 's'; }, 1000); view.timer = tm; }
+    else { hb.textContent = '■ ' + t('hold_stop'); const tm = {n:0, goal:view.reps, t0:Date.now()}; Sound.play('log');
+      tm.iv = setInterval(() => { const n = Math.floor((Date.now() - tm.t0) / 1000); if(n === tm.n) return; tm.n = n; rEl.textContent = n + 's';
+        if(n === tm.goal){ Sound.play('target'); Sound.vibrate(200); Sound.say(tv('v_hold')); } else if(n % 10 === 0) Sound.play('tick'); }, 200);
+      view.timer = tm; }
   };
   $('#log').onclick = () => logSet(id, isTest, done, N);
+  $('#music').onclick = () => {
+    if(Sound.musicOn()) Sound.stopMusic();
+    else { if(SET.music === 'off'){ SET.music = 'focus'; persist(); } Sound.startMusic(SET.music); }
+    $('#music').textContent = Sound.musicOn() ? '🎵' : '🔇';
+  };
   if($('#testone')) $('#testone').onclick = () => { view.testNext = view.i; view.reps = null; view.w = null; saveActive(); render(); };
   on('[data-edit]', el => editSet(el.dataset.edit));
   on('[data-delset]', el => deleteSet(el.dataset.delset));
@@ -585,12 +593,12 @@ function runView(){
   $('#next').onclick = () => { if(view.i === view.list.length - 1) finishWorkout(); else { view.i++; resetEx(); } };
   $('#quit').onclick = () => {
     if(Object.values(view.logged).flat().length){ if(confirm(t('quit_confirm'))) finishWorkout(); }
-    else { ACTIVE = null; store.set('active', null); go('home'); }
+    else { ACTIVE = null; store.set('active', null); Sound.stopMusic(); go('home'); }
   };
 }
 function resetEx(){ view.reps = null; view.w = null; view.testNext = null; saveActive(); render(); window.scrollTo(0, 0); }
 function logSet(id, isTest, done, N){
-  const x = EX[id];
+  const x = EX[id], news0 = NEWS.length;
   // stop a running hold timer first so the timed value is what gets logged
   if(view.timer){ clearInterval(view.timer.iv); view.reps = Math.max(1, view.timer.n); view.timer = null; }
   const entry = {id:newId(), t:Date.now(), sess:view.s, ex:id, reps:view.reps};
@@ -604,7 +612,7 @@ function logSet(id, isTest, done, N){
     if(gated(id) && !mastered(id) && entry.reps >= goal(id).reps){
       res.passed = true; res.un = markMastered(id, 'test');
       // calibration: keep testing up the path, but never auto-add the shoulder-risky skills
-      if(view.cal) res.un.filter(n => !EX[n].warn && ['rings','floor'].includes(eqOf(EX[n])) && !view.list.includes(n))
+      if(view.cal) res.un.filter(n => !EX[n].warn && atVenue(EX[n], SET.venue) && !view.list.includes(n))
         .reverse().forEach(n => view.list.splice(view.i + 1, 0, n));
     }
     if(view.cal) view.results.push(res);
@@ -612,9 +620,12 @@ function logSet(id, isTest, done, N){
   } else checkMastery(id);
   view.reps = null; if(!x.load) view.w = null;
   persist(); saveActive();
-  if(view.cal){ startRest(restFor(x, true), () => { view.i++; view.w = null; saveActive(); render(); window.scrollTo(0, 0); }); }
+  Sound.play(isTest ? 'target' : (!view.cal && done + 1 >= N) ? 'exdone' : 'log');
+  if(NEWS.length > news0){ setTimeout(() => Sound.play('level'), 450); Sound.say(tv('v_level')); }
+  const nextId = view.list[view.i + 1];
+  if(view.cal){ startRest(restFor(x, true), () => { view.i++; view.w = null; saveActive(); render(); window.scrollTo(0, 0); }, nextId ? EX[nextId].name : ''); }
   else if(isTest){ view.w = null; render(); toast(t('test_saved')); }
-  else if(done + 1 < N) startRest(restFor(x), () => render());
+  else if(done + 1 < N) startRest(restFor(x), () => render(), t('set_n', done + 2), tv('set_n', done + 2));
   else render();
 }
 function editSet(lid){
@@ -630,25 +641,40 @@ function deleteSet(lid){
   LOG = LOG.filter(e => e.id !== lid);
   if(l && l.cal && CAL[l.ex] && CAL[l.ex].t === l.t) delete CAL[l.ex];
   if(view.logged) Object.keys(view.logged).forEach(k => { view.logged[k] = view.logged[k].filter(i => i !== lid); });
+  Sound.play('soft');
   persist(); if(view.name === 'run') saveActive(); render();
 }
-function startRest(sec, after){
-  let n = sec; const o = document.createElement('div'); o.className = 'modal restm';
-  o.innerHTML = `<div class="sheet center"><small>${t('rest')}</small><b class="bigtime">${fmtTime(n)}</b>
-    <div class="row gap"><button class="btn ghost" data-d="-15">−15s</button><button class="btn ghost" data-d="15">+15s</button></div>
+function startRest(sec, after, cue, cueVoice){
+  let end = Date.now() + sec*1000, last = sec;
+  const o = document.createElement('div'); o.className = 'modal restm';
+  o.innerHTML = `<div class="sheet center"><small>${t('rest')}</small><b class="bigtime">${fmtTime(sec)}</b>
+    ${cue ? `<small>${t('up_next')}: ${cue}</small>` : ''}
+    <div class="row gap" style="margin-top:10px"><button class="btn ghost" data-d="-15">−15s</button><button class="btn ghost" data-d="15">+15s</button></div>
     <button class="btn" data-skip style="margin-top:10px">${t('skip')}</button></div>`;
   document.body.appendChild(o);
+  Sound.play('rest');
   const b = o.querySelector('.bigtime');
-  const end = () => { clearInterval(iv); o.remove(); after(); };
-  const iv = setInterval(() => { n--; b.textContent = fmtTime(Math.max(0, n)); if(n <= 0){ beep(); end(); } }, 1000);
-  o.querySelectorAll('[data-d]').forEach(el => el.onclick = () => { n = Math.max(1, n + +el.dataset.d); b.textContent = fmtTime(n); });
-  o.querySelector('[data-skip]').onclick = end;
+  const close = done => {
+    clearInterval(iv); o.remove();
+    if(done){ Sound.play('go'); Sound.vibrate([250, 120, 250]); Sound.say(cue ? tv('v_go', cueVoice || cue) : tv('v_rest_over')); }
+    after();
+  };
+  // count from the wall clock so the time stays right even if the phone throttles timers
+  const iv = setInterval(() => {
+    const n = Math.ceil((end - Date.now()) / 1000);
+    if(n !== last){ last = n; b.textContent = fmtTime(Math.max(0, n)); if(n > 0 && n <= 3) Sound.play('tick'); }
+    if(n <= 0) close(true);
+  }, 200);
+  o.querySelectorAll('[data-d]').forEach(el => el.onclick = () => { end = Math.max(Date.now() + 1000, end + +el.dataset.d * 1000); last = -1; });
+  o.querySelector('[data-skip]').onclick = () => close(false);
 }
 function finishWorkout(){
   const ids = Object.values(view.logged || {}).flat();
   const sum = {name:'summary', s:view.s, ids, t0:view.t0, t1:Date.now(), news:NEWS.slice(view.news0 || 0), cal:view.cal, results:view.results || []};
   ACTIVE = null; store.set('active', null);
-  tab = 'home'; view = sum; render(); window.scrollTo(0, 0);
+  Sound.stopMusic(); Sound.play('finish'); Sound.vibrate([120, 80, 120, 80, 300]);
+  if(ids.length) Sound.say(tv('v_done'));
+  sum.fresh = true; tab = 'home'; view = sum; render(); window.scrollTo(0, 0);
 }
 function summaryView(){
   const logs = view.ids.map(lid => LOG.find(l => l.id === lid)).filter(Boolean);
@@ -671,6 +697,7 @@ function summaryView(){
         <small>${byEx[id].map(l => fmtSet(x, l.reps, l.w)).join(' · ')}</small></div></div>`; }).join('') : ''}
     <button class="btn" id="done" style="margin-top:12px">${t('done')}</button>`;
   $('#done').onclick = () => go('home');
+  if(view.fresh){ view.fresh = false; if(prs.length || view.news.length) setTimeout(() => Sound.play('level'), 1600); }
 }
 
 /* ================= library ================= */
@@ -818,7 +845,16 @@ function settingsView(){
     <div class="card"><b>${t('ob_exp')}</b>${segHTML('exp', [['new', t('x_new')], ['regular', t('x_regular')], ['exp', t('x_exp')]], SET.exp)}<small>${t('exp_note')}</small></div>
     <div class="card"><b>${t('ring_mode')}</b>${segHTML('mode', [['beginner', '🌱 ' + t('guided')], ['standard', '🔥 ' + t('free')]], SET.mode)}<small>${SET.mode === 'beginner' ? t('guided_note') : t('free_note')}</small></div>
     <div class="card"><b>${t('ob_goal')}</b>${segHTML('gt', Object.keys(BASE_TARGET).map(k => [k, t('g_' + k)]), TG.type)}</div>
-    <div class="card"><b>${t('rest_alert')}</b>${segHTML('sound', [['1', '🔔 ' + t('on')], ['0', '🔕 ' + t('off')]], SET.sound ? '1' : '0')}<small>${t('rest_note')}</small></div>
+    <h2>🔊 ${t('snd_title')}</h2>
+    <div class="card"><b>${t('snd_sfx')}</b>${segHTML('sound', [['1', '🔔 ' + t('on')], ['0', '🔕 ' + t('off')]], SET.sound ? '1' : '0')}<small>${t('snd_sfx_note')}</small>
+      <b style="display:block;margin-top:12px">${t('snd_vol')}</b>${segHTML('vol', [['0.4', t('vol_low')], ['0.7', t('vol_mid')], ['1', t('vol_high')]], String(SET.vol))}
+      <b style="display:block;margin-top:4px">${t('snd_voice')}</b>${segHTML('voice', [['1', '🗣 ' + t('on')], ['0', t('off')]], SET.voice ? '1' : '0')}${SET.voice ? `<b style="display:block;margin-top:4px">${t('snd_voice_lang')}</b>${segHTML('vlang', [['en', 'English'], ['th', 'ไทย']], SET.voiceLang)}` : ''}<small>${t('snd_voice_note')}</small>
+      <b style="display:block;margin-top:12px">${t('snd_vib')}</b>${segHTML('vib', [['1', '📳 ' + t('on')], ['0', t('off')]], SET.vib ? '1' : '0')}</div>
+    <div class="card"><b>🎵 ${t('snd_music')}</b>${segHTML('music', [['off', t('off')], ['chill', t('mus_chill')], ['focus', t('mus_focus')], ['power', t('mus_power')]], SET.music)}
+      <small>${t('snd_music_note')}</small></div>
+    <div class="card"><b>${t('snd_try')}</b><div class="grid2" style="margin-top:8px">
+      <button class="btn ghost small" data-try="go">⏱ ${t('try_rest')}</button><button class="btn ghost small" data-try="finish">🏁 ${t('try_done')}</button>
+      <button class="btn ghost small" data-try="voice">🗣 ${t('try_voice')}</button><button class="btn ghost small" data-try="music">🎵 ${t('try_music')}</button></div></div>
     <div class="card"><b>${t('danger')}</b><button class="btn ghost" id="wipe" style="margin-top:8px">${t('clear_all')}</button></div>
     <small class="note">PieFit · ${t('offline_note')}</small>`;
   $('#back').onclick = () => go('more');
@@ -827,6 +863,19 @@ function settingsView(){
   on('[data-mode]', el => { SET.mode = el.dataset.mode; persist(); render(); });
   on('[data-gt]', el => { TG.type = el.dataset.gt; persist(); render(); });
   on('[data-sound]', el => { SET.sound = el.dataset.sound === '1'; persist(); render(); });
+  on('[data-vol]', el => { SET.vol = +el.dataset.vol; persist(); Sound.play('log'); render(); });
+  on('[data-voice]', el => { SET.voice = el.dataset.voice === '1'; persist(); render(); });
+  on('[data-vlang]', el => { SET.voiceLang = el.dataset.vlang; persist(); Sound.say(tv('v_go', tv('set_n', 2))); render(); });
+  on('[data-vib]', el => { SET.vib = el.dataset.vib === '1'; persist(); Sound.vibrate(150); render(); });
+  on('[data-music]', el => { SET.music = el.dataset.music; persist(); if(Sound.musicOn()) Sound.stopMusic(); render(); });
+  on('[data-try]', el => {
+    const k = el.dataset.try;
+    if(k === 'go'){ Sound.play('go'); Sound.vibrate([250, 120, 250]); }
+    else if(k === 'finish') Sound.play('finish');
+    else if(k === 'voice') Sound.say(tv('v_go', tv('set_n', 2)));
+    else if(Sound.musicOn()) Sound.stopMusic();
+    else { Sound.startMusic(SET.music === 'off' ? 'focus' : SET.music); setTimeout(() => Sound.stopMusic(), 12000); }
+  });
   $('#wipe').onclick = () => {
     if(!confirm(t('clear_confirm'))) return;
     LOG = []; MASTERED = {}; NEWS = []; CAL = {}; ACTIVE = null; store.set('active', null); persist(); toast(t('cleared')); render();
