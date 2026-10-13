@@ -11,7 +11,8 @@ const store = {
   set(k, v){ try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch(e){} }
 };
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
-const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, vol:0.7, voice:true, voiceLang:'en', vib:true, music:'off', onboarded:false};
+const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, vol:0.7, voice:true, voiceLang:'en', vib:true, music:'off', onboarded:false,
+  sfx:{go:'chime', log:'pop', exdone:'arcade', finish:'arcade', level:'arcade'}};
 let LOG, MASTERED, NEWS, TG, CAL, SET, ACTIVE;
 function loadState(){
   LOG = store.get('log', []); if(!Array.isArray(LOG)) LOG = [];
@@ -31,6 +32,7 @@ function loadState(){
     SET.onboarded = LOG.length > 0;
   }
   if(!VENUE_EQ[SET.venue]) SET.venue = 'rings';
+  SET.sfx = Object.assign({}, SET_DEFAULT.sfx, isObj(SET.sfx) ? SET.sfx : {});
 }
 function persist(){
   store.set('log', LOG); store.set('mastered', MASTERED); store.set('news', NEWS);
@@ -850,6 +852,11 @@ function settingsView(){
       <b style="display:block;margin-top:12px">${t('snd_vol')}</b>${segHTML('vol', [['0.4', t('vol_low')], ['0.7', t('vol_mid')], ['1', t('vol_high')]], String(SET.vol))}
       <b style="display:block;margin-top:4px">${t('snd_voice')}</b>${segHTML('voice', [['1', '🗣 ' + t('on')], ['0', t('off')]], SET.voice ? '1' : '0')}${SET.voice ? `<b style="display:block;margin-top:4px">${t('snd_voice_lang')}</b>${segHTML('vlang', [['en', 'English'], ['th', 'ไทย']], SET.voiceLang)}` : ''}<small>${t('snd_voice_note')}</small>
       <b style="display:block;margin-top:12px">${t('snd_vib')}</b>${segHTML('vib', [['1', '📳 ' + t('on')], ['0', t('off')]], SET.vib ? '1' : '0')}</div>
+    <div class="card"><b>🎨 ${t('snd_theme')}</b>${segHTML('theme', Object.keys(Sound.THEMES).map(k => [k, t('th_' + k)]), Object.keys(Sound.THEMES).find(k => Object.keys(Sound.THEMES[k]).every(e => Sound.THEMES[k][e] === SET.sfx[e])) || '')}
+      <small>${t('snd_events')}</small>
+      ${Object.entries(Sound.events()).map(([ev, vars]) => `<div class="row" style="margin-top:10px"><span class="grow">${t('ev_' + ev)}</span>
+        <select class="inp" data-sfx="${ev}" style="width:auto;margin:0">${vars.map(v => `<option value="${v}" ${SET.sfx[ev] === v ? 'selected' : ''}>${t('var_' + v)}</option>`).join('')}</select>
+        <button class="chip mini" data-hear="${ev}" aria-label="${t('snd_try')}">▶</button></div>`).join('')}</div>
     <div class="card"><b>🎵 ${t('snd_music')}</b>${segHTML('music', [['off', t('off')], ['chill', t('mus_chill')], ['focus', t('mus_focus')], ['power', t('mus_power')]], SET.music)}
       <small>${t('snd_music_note')}</small></div>
     <div class="card"><b>${t('snd_try')}</b><div class="grid2" style="margin-top:8px">
@@ -865,6 +872,9 @@ function settingsView(){
   on('[data-sound]', el => { SET.sound = el.dataset.sound === '1'; persist(); render(); });
   on('[data-vol]', el => { SET.vol = +el.dataset.vol; persist(); Sound.play('log'); render(); });
   on('[data-voice]', el => { SET.voice = el.dataset.voice === '1'; persist(); render(); });
+  on('[data-theme]', el => { Object.assign(SET.sfx, Sound.THEMES[el.dataset.theme]); persist(); Sound.play('finish'); render(); });
+  app.querySelectorAll('[data-sfx]').forEach(sel => sel.onchange = () => { SET.sfx[sel.dataset.sfx] = sel.value; persist(); Sound.play(sel.dataset.sfx); render(); });
+  on('[data-hear]', el => Sound.play(el.dataset.hear));
   on('[data-vlang]', el => { SET.voiceLang = el.dataset.vlang; persist(); Sound.say(tv('v_go', tv('set_n', 2))); render(); });
   on('[data-vib]', el => { SET.vib = el.dataset.vib === '1'; persist(); Sound.vibrate(150); render(); });
   on('[data-music]', el => { SET.music = el.dataset.music; persist(); if(Sound.musicOn()) Sound.stopMusic(); render(); });
@@ -904,6 +914,8 @@ function importData(file){
     if(isObj(d.targets)){ TG = {type: BASE_TARGET[d.targets.type] ? d.targets.type : 'general', custom: isObj(d.targets.custom) ? d.targets.custom : {}}; }
     CAL = isObj(d.cal) ? d.cal : {};
     if(isObj(d.settings)) Object.keys(SET_DEFAULT).forEach(k => { if(typeof d.settings[k] === typeof SET_DEFAULT[k]) SET[k] = d.settings[k]; });
+    const ev = Sound.events(); SET.sfx = Object.assign({}, SET_DEFAULT.sfx);
+    if(isObj(d.settings) && isObj(d.settings.sfx)) Object.keys(ev).forEach(k => { if(ev[k].includes(d.settings.sfx[k])) SET.sfx[k] = d.settings.sfx[k]; });
     SET.onboarded = true;
     persist(); toast(t('import_ok')); go('home');
   };

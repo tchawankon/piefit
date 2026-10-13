@@ -332,3 +332,18 @@ Object.assign(EXTH, {
   handstand:{warn:'ฝึกวิธีลงให้ปลอดภัยก่อน (หมุนตัวออกด้านข้าง หรือค่อยๆ เดินเท้าลง) หยุดถ้าเจ็บข้อมือหรือไหล่',
     cues:['มือกว้างประมาณไหล่ ห่างกำแพงประมาณหนึ่งฝ่ามือ','เตะขาขึ้น หรือเดินเท้าขึ้นกำแพง','ดันพื้นออก แขนล็อก ซี่โครงเก็บ','เริ่มจากค้างสั้นๆ แล้วค่อยเพิ่ม']}
 });
+
+Object.assign(STR.en, {
+  snd_theme:'Sound style', th_classic:'Classic', th_arcade:'8-bit game', th_coach:'Coach',
+  snd_events:'Pick a style, or choose the sound for each moment. ▶ to listen.',
+  ev_go:'Rest over', ev_log:'Set logged', ev_exdone:'All sets done', ev_finish:'Workout done', ev_level:'Level up / PR',
+  var_chime:'Chime', var_arcade:'8-bit', var_whistle:'Whistle', var_bell:'Boxing bell', var_brass:'Fanfare', var_sparkle:'Sparkle',
+  var_pop:'Pop', var_blip:'8-bit blip', var_click:'Click'
+});
+Object.assign(STR.th, {
+  snd_theme:'สไตล์เสียง', th_classic:'คลาสสิก', th_arcade:'เกม 8-bit', th_coach:'โค้ช',
+  snd_events:'เลือกสไตล์สำเร็จรูป หรือเลือกเสียงแยกตามแต่ละช่วง กด ▶ เพื่อลองฟัง',
+  ev_go:'หมดเวลาพัก', ev_log:'บันทึกเซ็ต', ev_exdone:'ครบทุกเซ็ต', ev_finish:'ซ้อมเสร็จ', ev_level:'ผ่านขั้น / สถิติใหม่',
+  var_chime:'กริ๊ง', var_arcade:'เกม 8-bit', var_whistle:'นกหวีด', var_bell:'ระฆังมวย', var_brass:'แตรฉลอง', var_sparkle:'วิบวับ',
+  var_pop:'ป๊อป', var_blip:'บี๊บ 8-bit', var_click:'คลิก'
+});
