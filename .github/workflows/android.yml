@@ -1,8 +1,7 @@
 name: Build Android APK
 
+# Manual only: the owner tests changes on the web version first and asks for an APK explicitly.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
