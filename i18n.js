@@ -347,3 +347,12 @@ Object.assign(STR.th, {
   var_chime:'กริ๊ง', var_arcade:'เกม 8-bit', var_whistle:'นกหวีด', var_bell:'ระฆังมวย', var_brass:'แตรฉลอง', var_sparkle:'วิบวับ',
   var_pop:'ป๊อป', var_blip:'บี๊บ 8-bit', var_click:'คลิก'
 });
+
+Object.assign(STR.en, {
+  wake_title:'Keep screen on during workouts', rest_late:'Rest ended {0}s ago',
+  wake_note:'Stops the screen from turning off while a workout is open, so the rest alarm rings on time. Uses a bit more battery. If you leave the app anyway, the timer stays correct and alerts you as soon as you come back.'
+});
+Object.assign(STR.th, {
+  wake_title:'ให้จอเปิดค้างระหว่างซ้อม', rest_late:'หมดเวลาพักไปแล้ว {0} วินาที',
+  wake_note:'จอจะไม่ดับเองระหว่างเปิดหน้าซ้อม เสียงเตือนพักจึงดังตรงเวลา กินแบตเพิ่มนิดหน่อย ถ้าออกจากแอปไป ตัวจับเวลายังนับถูก และจะเตือนทันทีที่กลับเข้าแอป'
+});

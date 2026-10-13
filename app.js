@@ -11,7 +11,7 @@ const store = {
   set(k, v){ try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch(e){} }
 };
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
-const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, vol:0.7, voice:true, voiceLang:'en', vib:true, music:'off', onboarded:false,
+const SET_DEFAULT = {lang:'th', mode:'beginner', venue:'rings', exp:'new', sound:true, vol:0.7, voice:true, voiceLang:'en', vib:true, music:'off', wake:true, onboarded:false,
   sfx:{go:'chime', log:'pop', exdone:'arcade', finish:'arcade', level:'arcade'}};
 let LOG, MASTERED, NEWS, TG, CAL, SET, ACTIVE;
 function loadState(){
@@ -405,8 +405,20 @@ function pickExercise(title, hint, ids, onPick){
 let tab = 'home', view = {name:'home'};
 const TABS = [['home','🏠','tab_home'], ['lib','📚','tab_lib'], ['prog','📈','tab_prog'], ['more','☰','tab_more']];
 function go(tb, v){ tab = tb; view = v || {name:'home'}; render(); window.scrollTo(0, 0); }
+let wakeLock = null;
+async function keepAwake(on){
+  try {
+    if(on && SET.wake && 'wakeLock' in navigator && !wakeLock && document.visibilityState === 'visible'){
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if((!on || !SET.wake) && wakeLock){ const w = wakeLock; wakeLock = null; await w.release(); }
+  } catch(e){ wakeLock = null; }
+}
+// the lock is dropped whenever the app is hidden, so take it again on return
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') keepAwake(view.name === 'run'); });
 function render(){
   cancelAnimationFrame(raf);
+  keepAwake(view.name === 'run');
   if(view.timer){ clearInterval(view.timer.iv); view.timer = null; }
   document.documentElement.lang = SET.lang;
   if(!SET.onboarded && view.name !== 'onboard') view = {name:'onboard'};
@@ -520,7 +532,7 @@ function startWorkout(sid, list, cal){
   tab = 'home'; saveActive(); if(SET.music !== 'off') Sound.startMusic(SET.music); render(); window.scrollTo(0, 0);
 }
 function saveActive(){
-  if(view.name === 'run'){ ACTIVE = {s:view.s, list:view.list, i:view.i, logged:view.logged, cal:view.cal, t0:view.t0, news0:view.news0, results:view.results, testNext:view.testNext}; }
+  if(view.name === 'run'){ ACTIVE = {s:view.s, list:view.list, i:view.i, logged:view.logged, cal:view.cal, t0:view.t0, news0:view.news0, results:view.results, testNext:view.testNext, rest:view.rest || null}; }
   store.set('active', ACTIVE);
 }
 function loggedSets(i){ return (view.logged[i] || []).map(lid => LOG.find(l => l.id === lid)).filter(Boolean); }
@@ -560,6 +572,7 @@ function runView(){
       <button class="btn ${done >= N ? '' : 'ghost'}" id="next">${view.i === view.list.length - 1 ? t('finish') : t('next') + ' →'}</button></div>
     <div style="height:14px"></div>${warnBlock(id)}${howTo(id, first)}${view.cal ? '' : goalBlock(id)}`;
   startAnim(document.getElementById('figure'), x.anim);
+  if(view.rest && !document.querySelector('.restm')){ const r = view.rest; startRest(0, r.cue, r.cueVoice, r.next, r.end); }
 
   const step = x.hold ? 5 : 1, rEl = $('#r');
   const showR = () => { rEl.textContent = view.reps + (x.hold ? 's' : ''); };
@@ -625,9 +638,9 @@ function logSet(id, isTest, done, N){
   Sound.play(isTest ? 'target' : (!view.cal && done + 1 >= N) ? 'exdone' : 'log');
   if(NEWS.length > news0){ setTimeout(() => Sound.play('level'), 450); Sound.say(tv('v_level')); }
   const nextId = view.list[view.i + 1];
-  if(view.cal){ startRest(restFor(x, true), () => { view.i++; view.w = null; saveActive(); render(); window.scrollTo(0, 0); }, nextId ? EX[nextId].name : ''); }
+  if(view.cal){ const nn = nextId ? EX[nextId].name : ''; startRest(restFor(x, true), nn, nn, true); }
   else if(isTest){ view.w = null; render(); toast(t('test_saved')); }
-  else if(done + 1 < N) startRest(restFor(x), () => render(), t('set_n', done + 2), tv('set_n', done + 2));
+  else if(done + 1 < N) startRest(restFor(x), t('set_n', done + 2), tv('set_n', done + 2), false);
   else render();
 }
 function editSet(lid){
@@ -646,28 +659,41 @@ function deleteSet(lid){
   Sound.play('soft');
   persist(); if(view.name === 'run') saveActive(); render();
 }
-function startRest(sec, after, cue, cueVoice){
-  let end = Date.now() + sec*1000, last = sec;
+function restAfter(next){
+  if(next){ view.i++; view.w = null; }
+  view.rest = null; saveActive(); render();
+  if(next) window.scrollTo(0, 0);
+}
+function startRest(sec, cue, cueVoice, next, endAt){
+  const r = view.rest = {end: endAt || Date.now() + sec*1000, cue: cue || '', cueVoice: cueVoice || '', next: !!next};
+  saveActive();
+  let last = -1;
   const o = document.createElement('div'); o.className = 'modal restm';
-  o.innerHTML = `<div class="sheet center"><small>${t('rest')}</small><b class="bigtime">${fmtTime(sec)}</b>
-    ${cue ? `<small>${t('up_next')}: ${cue}</small>` : ''}
+  o.innerHTML = `<div class="sheet center"><small>${t('rest')}</small><b class="bigtime">${fmtTime(Math.max(0, Math.ceil((r.end - Date.now()) / 1000)))}</b>
+    ${r.cue ? `<small>${t('up_next')}: ${r.cue}</small>` : ''}
     <div class="row gap" style="margin-top:10px"><button class="btn ghost" data-d="-15">−15s</button><button class="btn ghost" data-d="15">+15s</button></div>
     <button class="btn" data-skip style="margin-top:10px">${t('skip')}</button></div>`;
   document.body.appendChild(o);
-  Sound.play('rest');
+  if(!endAt) Sound.play('rest');
   const b = o.querySelector('.bigtime');
   const close = done => {
     clearInterval(iv); o.remove();
-    if(done){ Sound.play('go'); Sound.vibrate([250, 120, 250]); Sound.say(cue ? tv('v_go', cueVoice || cue) : tv('v_rest_over')); }
-    after();
+    if(done){
+      const late = Math.round((Date.now() - r.end) / 1000);
+      Sound.play('go'); Sound.vibrate([250, 120, 250]);
+      Sound.say(r.cue ? tv('v_go', r.cueVoice || r.cue) : tv('v_rest_over'));
+      if(late >= 3) toast(t('rest_late', late));
+    }
+    restAfter(r.next);
   };
-  // count from the wall clock so the time stays right even if the phone throttles timers
+  // count from the wall clock: after the phone sleeps or throttles timers the time is still right,
+  // and the alarm fires as soon as the app is visible again
   const iv = setInterval(() => {
-    const n = Math.ceil((end - Date.now()) / 1000);
-    if(n !== last){ last = n; b.textContent = fmtTime(Math.max(0, n)); if(n > 0 && n <= 3) Sound.play('tick'); }
+    const n = Math.ceil((r.end - Date.now()) / 1000);
+    if(n !== last){ last = n; b.textContent = fmtTime(Math.max(0, n)); if(n > 0 && n <= 3 && !document.hidden) Sound.play('tick'); }
     if(n <= 0) close(true);
   }, 200);
-  o.querySelectorAll('[data-d]').forEach(el => el.onclick = () => { end = Math.max(Date.now() + 1000, end + +el.dataset.d * 1000); last = -1; });
+  o.querySelectorAll('[data-d]').forEach(el => el.onclick = () => { r.end = Math.max(Date.now() + 1000, r.end + +el.dataset.d * 1000); last = -1; saveActive(); });
   o.querySelector('[data-skip]').onclick = () => close(false);
 }
 function finishWorkout(){
@@ -847,6 +873,7 @@ function settingsView(){
     <div class="card"><b>${t('ob_exp')}</b>${segHTML('exp', [['new', t('x_new')], ['regular', t('x_regular')], ['exp', t('x_exp')]], SET.exp)}<small>${t('exp_note')}</small></div>
     <div class="card"><b>${t('ring_mode')}</b>${segHTML('mode', [['beginner', '🌱 ' + t('guided')], ['standard', '🔥 ' + t('free')]], SET.mode)}<small>${SET.mode === 'beginner' ? t('guided_note') : t('free_note')}</small></div>
     <div class="card"><b>${t('ob_goal')}</b>${segHTML('gt', Object.keys(BASE_TARGET).map(k => [k, t('g_' + k)]), TG.type)}</div>
+    <div class="card"><b>📱 ${t('wake_title')}</b>${segHTML('wake', [['1', t('on')], ['0', t('off')]], SET.wake ? '1' : '0')}<small>${t('wake_note')}</small></div>
     <h2>🔊 ${t('snd_title')}</h2>
     <div class="card"><b>${t('snd_sfx')}</b>${segHTML('sound', [['1', '🔔 ' + t('on')], ['0', '🔕 ' + t('off')]], SET.sound ? '1' : '0')}<small>${t('snd_sfx_note')}</small>
       <b style="display:block;margin-top:12px">${t('snd_vol')}</b>${segHTML('vol', [['0.4', t('vol_low')], ['0.7', t('vol_mid')], ['1', t('vol_high')]], String(SET.vol))}
@@ -875,6 +902,7 @@ function settingsView(){
   on('[data-theme]', el => { Object.assign(SET.sfx, Sound.THEMES[el.dataset.theme]); persist(); Sound.play('finish'); render(); });
   app.querySelectorAll('[data-sfx]').forEach(sel => sel.onchange = () => { SET.sfx[sel.dataset.sfx] = sel.value; persist(); Sound.play(sel.dataset.sfx); render(); });
   on('[data-hear]', el => Sound.play(el.dataset.hear));
+  on('[data-wake]', el => { SET.wake = el.dataset.wake === '1'; persist(); render(); });
   on('[data-vlang]', el => { SET.voiceLang = el.dataset.vlang; persist(); Sound.say(tv('v_go', tv('set_n', 2))); render(); });
   on('[data-vib]', el => { SET.vib = el.dataset.vib === '1'; persist(); Sound.vibrate(150); render(); });
   on('[data-music]', el => { SET.music = el.dataset.music; persist(); if(Sound.musicOn()) Sound.stopMusic(); render(); });
