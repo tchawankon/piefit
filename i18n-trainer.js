@@ -195,3 +195,24 @@ Object.assign(STR.th, {
   rv_yoga:'ยืดเหยียด & โยคะ', rv_yoga_n:'{0} นาทีใน 7 วันล่าสุด',
   in_stretch:'สัปดาห์นี้ยังไม่ได้ยืดเลย ลองเซสชัน "หลังซ้อม" (8 นาที)'
 });
+
+// ---- stretching sessions (before / after training), separate from yoga
+Object.assign(STR.en, {
+  tab_yoga:'Stretch', yg_title:'Stretching & yoga', rt_warm:'Stretch before', rt_cool:'Stretch after',
+  st_title:'Stretching', st_intro:'Before training: moving stretches that warm you up. After training: held stretches that cool you down. Every stretch has 3 levels.',
+  st_pre:'Before training (dynamic)', st_pre_note:'Keep moving through each stretch. Long static holds before lifting are not needed.',
+  st_post:'After training (static)', st_post_note:'Hold each stretch to a mild pull and breathe slowly.',
+  st_kind_dyn:'Dynamic', st_kind_static:'Static', yg_yoga:'Yoga', yg_lib_stretch:'Stretches', yg_lib_yoga:'Yoga poses',
+  pf_routine:'Stretch before and after workouts',
+  in_stretch:'No stretching this week yet. Try "After training" (about 6 minutes).'
+});
+Object.assign(STR.th, {
+  tab_yoga:'ยืดเหยียด', yg_title:'ยืดเหยียด & โยคะ', rt_warm:'ยืดก่อนซ้อม', rt_cool:'ยืดหลังซ้อม',
+  st_title:'ยืดกล้ามเนื้อ', st_intro:'ก่อนซ้อม: ยืดแบบเคลื่อนไหวเพื่อวอร์มร่างกาย  หลังซ้อม: ยืดค้างเพื่อคูลดาวน์  ทุกท่ามี 3 ระดับ',
+  st_pre:'ก่อนซ้อม (ยืดแบบเคลื่อนไหว)', st_pre_note:'เคลื่อนไหวต่อเนื่องในแต่ละท่า ไม่จำเป็นต้องยืดค้างนานก่อนยกน้ำหนัก',
+  st_post:'หลังซ้อม (ยืดค้าง)', st_post_note:'ยืดค้างแค่รู้สึกตึงพอดี และหายใจช้าๆ',
+  st_kind_dyn:'ยืดแบบเคลื่อนไหว', st_kind_static:'ยืดค้าง', yg_yoga:'โยคะ', yg_lib_stretch:'ท่ายืด', yg_lib_yoga:'ท่าโยคะ',
+  pf_routine:'ยืดก่อนและหลังซ้อม',
+  in_stretch:'สัปดาห์นี้ยังไม่ได้ยืดเลย ลองเซสชัน "หลังซ้อม" (ประมาณ 6 นาที)',
+  s_push:'อก', s_pull:'หลัง'
+});

@@ -491,6 +491,7 @@ function homeView(){
       : plan && !plan.next ? `<div class="card hl"><b>🎉 ${t('pl_week_done')}</b></div>` : ''}
     ${Coach.deloadOn() ? `<div class="card warn row"><div class="grow">🛌 ${t('dl_on', new Date(Coach.prof.deloadUntil).toLocaleDateString())}</div><button class="chip" id="dloff">${t('dl_stop')}</button></div>`
       : dl ? `<div class="card warn"><b>🛌 ${t('dl_title')}</b><br><small>${dl}</small><button class="btn ghost small" id="dlon" style="margin-top:8px">${t('dl_start')}</button></div>` : ''}
+    <div class="row gap" style="margin-bottom:10px"><button class="btn ghost small" data-stq="pre_full">🔥 ${t('rt_warm')}</button><button class="btn ghost small" data-stq="post_full">🧊 ${t('rt_cool')}</button></div>
     <div class="lbl-sm">${t('ob_where')}</div>${venueSeg()}
     ${best && !(plan && plan.next && !plan.trainedToday && (plan.trainDay || plan.missed)) ? `<div class="card ${plan ? '' : 'hero'} sess" data-s="${best.id}"><small>${t('suggest_today')}</small>
       <div class="row"><div class="emoji">${best.icon}</div><div class="grow"><h2 style="margin:0">${sessionName(best.id)}</h2><small>${reason}</small></div><span class="go">›</span></div></div>` : ''}
@@ -516,6 +517,7 @@ function homeView(){
   if($('#dlon')) $('#dlon').onclick = () => { Coach.startDeload(); render(); };
   if($('#dloff')) $('#dloff').onclick = () => { Coach.stopDeload(); render(); };
   if($('#askai')) $('#askai').onclick = () => go('more', {name:'coach'});
+  on('[data-stq]', el => go('yoga', {name:'ysess', id:el.dataset.stq}));
   $('#moretips').onclick = () => { progSub = 'review'; go('prog'); };
   if($('#resume')) $('#resume').onclick = () => { Native.prepare(); if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
   if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };
@@ -578,7 +580,7 @@ function sessionView(){
       if(ready && ready.pain.length){ const r = Coach.applyLimits(l, SET.venue, ready.pain, true); l = r.list; if(r.changes.length) toast(t('ck_swapped', Coach.areaNames(ready.pain))); }
       const f = Coach.fit(l, view.budget, m.sets);
       const begin = () => startWorkout(s.id, f.list, false, {sets:f.sets, pairs:f.pairs, ready, wMul:m.wMul, tag:m.tag});
-      if(Coach.prof.warm && f.list.length) Coach.startRoutine('warm', Coach.warmup(f.list), begin); else begin();
+      if(Coach.prof.warm && f.list.length) Yoga.start(Yoga.preFor(f.list), begin, {kind:'warm'}); else begin();
     });
   };
 }
@@ -789,7 +791,7 @@ function finishWorkout(){
   sum.fresh = true; tab = 'home';
   if(Coach.prof.cool && ids.length && !view.cal){
     const exs = [...new Set(ids.map(i => (LOG.find(l => l.id === i) || {}).ex).filter(e => EX[e]))];
-    Yoga.start({id:'cool', icon:'🧘', n:['Cool-down','คูลดาวน์'], d:['',''], poses:Yoga.forWorkout(exs)}, () => { tab = 'home'; view = sum; render(); window.scrollTo(0, 0); }, {kind:'cool'});
+    Yoga.start(Yoga.postFor(exs), () => { tab = 'home'; view = sum; render(); window.scrollTo(0, 0); }, {kind:'cool'});
     return;
   }
   view = sum; render(); window.scrollTo(0, 0);

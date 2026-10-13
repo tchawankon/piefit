@@ -119,16 +119,112 @@ const Yoga = (() => {
       V(['Lie still','นอนนิ่ง'], ['Lie on your back, let everything go, slow breathing','นอนหงาย ปล่อยทุกส่วน หายใจช้าๆ'], LIE),
       V(['Lie still','นอนนิ่ง'], ['Lie on your back, let everything go, slow breathing','นอนหงาย ปล่อยทุกส่วน หายใจช้าๆ'], LIE)])
   };
-  const AREA = {hamstrings:['Hamstrings','ต้นขาหลัง'], hips:['Hips','สะโพก'], quads:['Quads','ต้นขาหน้า'], groin:['Inner thighs','ขาด้านใน'],
+
+  /* ---------- gym-style stretches: dynamic (before training) and static (after training) ---------- */
+  const DOOR = [['l', 56, 0, 56, 136]], WALL = [['l', 150, 0, 150, 136]];
+  const ST_ = (kind, n, a, side, base, lv, deco) => ({n, a, side, base, lv, kind, deco});
+  const LUNGE = {h:[124,96],s:[112,100],e:[116,120],w:[118,134],p:[92,106],k:[120,106],f:[126,134],k2:[70,132],f2:[44,134]};
+  Object.assign(POSES, {
+    armcircles: ST_('dyn', ['Arm circles','หมุนแขน'], ['shoulders'], false, STAND, [
+      V(['Small circles','วงเล็ก'], ['Arms out, small controlled circles both ways','กางแขน หมุนวงเล็กช้าๆ ทั้งสองทิศ'], O(STAND, {e:[106,42],w:[122,40]})),
+      V(['Big circles','วงใหญ่'], ['Full circles past the ears and the hips','หมุนวงเต็มผ่านหูและสะโพก'], O(STAND, {e:[91,20],w:[92,4]})),
+      V(['Big and fast, on the toes','วงใหญ่ เร็วขึ้น เขย่งเท้า'], ['Faster full circles while rising on the toes','หมุนวงเต็มเร็วขึ้น พร้อมเขย่งปลายเท้า'], O(STAND, {h:[88,16],s:[90,32],p:[90,72],k:[90,102],e:[91,14],w:[92,0]}))]),
+    torsotwist: ST_('dyn', ['Torso twists','บิดลำตัว'], ['spine'], false, STAND, [
+      V(['Small twists','บิดเบาๆ'], ['Feet planted, turn the upper body side to side','เท้าวางนิ่ง หมุนลำตัวช่วงบนซ้ายขวา'], O(STAND, {e:[100,54],w:[110,66]})),
+      V(['Arms swinging','แกว่งแขน'], ['Let the arms swing around with the turn','ปล่อยแขนแกว่งตามการหมุน'], O(STAND, {e:[106,40],w:[122,40]})),
+      V(['Reaching','เอื้อมไกล'], ['Pivot the back foot and reach far behind','หมุนเท้าหลังตาม และเอื้อมไปข้างหลังให้ไกล'], O(STAND, {s:[94,38],e:[112,38],w:[130,36]}))]),
+    catcow: ST_('dyn', ['Cat-cow','Cat-cow'], ['spine'], false, QUAD, [
+      V(['Small range','ช่วงเล็ก'], ['On hands and knees, gently round and arch','คุกเข่าวางมือ โก่งและแอ่นหลังเบาๆ'], O(QUAD, {h:[134,92]})),
+      V(['Full range','ช่วงเต็ม'], ['Round fully, then arch and look up','โก่งให้สุด แล้วแอ่นและเงยหน้า'], O(QUAD, {h:[128,112],s:[120,96]})),
+      V(['Slow with breath','ช้าตามลมหายใจ'], ['Full range, 4 seconds each way with the breath','ช่วงเต็ม ทางละ 4 วินาทีตามลมหายใจ'], O(QUAD, {h:[126,114],s:[120,94],p:[72,98]}))]),
+    legswing: ST_('dyn', ['Leg swings','เหวี่ยงขา'], ['hips','hamstrings'], true, STAND, [
+      V(['Small swings','เหวี่ยงเบา'], ['Hold a wall, small relaxed swings','จับผนัง เหวี่ยงขาเบาๆ'], O(STAND, {k2:[98,108],f2:[108,132]})),
+      V(['To hip height','ถึงระดับสะโพก'], ['Swing forward and back up to hip height','เหวี่ยงหน้า-หลังถึงระดับสะโพก'], O(STAND, {k2:[106,100],f2:[124,118]})),
+      V(['High swings','เหวี่ยงสูง'], ['Tall posture, swing as high as control allows','ตัวตรง เหวี่ยงสูงเท่าที่ยังคุมได้'], O(STAND, {k2:[110,92],f2:[132,96]}))]),
+    hipcircle: ST_('dyn', ['Hip circles','หมุนสะโพก'], ['hips'], false, STAND, [
+      V(['Small','วงเล็ก'], ['Hands on hips, small circles','มือเท้าเอว หมุนวงเล็ก'], O(STAND, {p:[94,78]})),
+      V(['Medium','วงกลาง'], ['Bigger circles both directions','หมุนวงใหญ่ขึ้นทั้งสองทิศ'], O(STAND, {p:[98,78],s:[88,38]})),
+      V(['Large','วงใหญ่'], ['Big slow circles, knees soft','หมุนวงใหญ่ช้าๆ เข่างอเล็กน้อย'], O(STAND, {p:[102,80],s:[86,38],k:[94,108]}))]),
+    worldsgreatest: ST_('dyn', ["World's greatest stretch",'ยืดทั้งตัว (World\u2019s greatest)'], ['hips','spine','hamstrings'], true, STAND, [
+      V(['Lunge, hands down','ลันจ์ มือแตะพื้น'], ['Long lunge, both hands on the floor inside the front foot','ลันจ์ยาว มือทั้งสองวางพื้นด้านในเท้าหน้า'], LUNGE),
+      V(['Elbow to instep','ศอกลงหาเท้า'], ['Drop the inside elbow toward the front foot','ลดศอกด้านในลงหาเท้าหน้า'], O(LUNGE, {s:[112,110],e:[114,128],w:[126,132],h:[126,108]})),
+      V(['Rotate, arm up','บิดตัว ยกแขน'], ['Then rotate and reach the arm to the ceiling','แล้วบิดตัวยกแขนชี้เพดาน'], O(LUNGE, {s:[110,100],e:[108,80],w:[106,60],h:[120,96]}))]),
+    inchworm: ST_('dyn', ['Inchworm','หนอนคืบ (Inchworm)'], ['hamstrings','shoulders'], false, STAND, [
+      V(['Walk out to the knees','เดินมือออก วางเข่า'], ['Fold, walk the hands out, lower the knees','ก้มตัว เดินมือออกไป วางเข่าลง'], QUAD),
+      V(['Walk out to a plank','เดินมือออกถึงแพลงก์'], ['Walk the hands out to a straight-arm plank and back','เดินมือออกจนเป็นแพลงก์แขนเหยียด แล้วกลับ'], {h:[142,94],s:[128,100],e:[129,116],w:[130,132],p:[74,116],k:[47,124],f:[20,132]}),
+      V(['Plank + push-up','แพลงก์ + วิดพื้น'], ['Add one push-up at the plank','เพิ่มวิดพื้น 1 ครั้งตอนแพลงก์'], {h:[132,122],s:[116,124],e:[124,114],w:[130,132],p:[68,128],k:[44,130],f:[20,134]})]),
+    deepsquat: ST_('dyn', ['Deep squat pry','ย่อลึกค้าง (Squat pry)'], ['hips','groin','calves'], false, STAND, [
+      V(['Holding on','จับที่ยึด'], ['Hold a door frame or post and sink into a squat','จับวงกบประตูหรือเสา แล้วย่อลง'], {h:[86,58],s:[80,72],e:[98,78],w:[112,74],p:[70,104],k:[108,104],f:[98,134]}),
+      V(['Deep, elbows in','ย่อลึก ศอกดันเข่า'], ['Hands together, elbows push the knees out','ประกบมือ ใช้ศอกดันเข่าออก'], {h:[90,72],s:[84,86],e:[100,104],w:[98,96],p:[76,120],k:[110,104],f:[100,134]}),
+      V(['Deep, arms overhead','ย่อลึก ยกแขน'], ['Sit deep, chest tall, arms overhead','นั่งลึก อกตั้ง ยกแขนเหนือหัว'], {h:[90,72],s:[84,86],e:[90,64],w:[92,44],p:[76,120],k:[110,104],f:[100,134]})]),
+    doorchest: ST_('static', ['Doorway chest stretch','ยืดอกที่วงกบประตู'], ['chest','shoulders'], true, STAND, [
+      V(['Arm low','แขนต่ำ'], ['Forearm on the frame below the shoulder, turn away','วางแขนท่อนล่างต่ำกว่าไหล่ หมุนตัวออก'], O(STAND, {e:[76,64],w:[62,80]})),
+      V(['Shoulder height','ระดับไหล่'], ['Arm at shoulder height, step through gently','แขนระดับไหล่ ก้าวผ่านเบาๆ'], O(STAND, {e:[72,40],w:[56,40]})),
+      V(['Arm high, step through','แขนสูง ก้าวลึก'], ['Arm above the shoulder, lean further through','แขนสูงกว่าไหล่ เอนผ่านมากขึ้น'], O(STAND, {e:[74,28],w:[58,18],p:[94,78],k:[98,108],f:[100,134],s:[96,40],h:[98,24]}))], DOOR),
+    crossbody: ST_('static', ['Cross-body shoulder stretch','ยืดไหล่ข้ามลำตัว'], ['shoulders'], true, STAND, [
+      V(['Light','เบา'], ['Bring one arm across the chest, hold it at the forearm','ดึงแขนข้ามอก จับที่แขนท่อนล่าง'], O(STAND, {e:[100,48],w:[108,46]})),
+      V(['Pull closer','ดึงชิดขึ้น'], ['Hold above the elbow and pull it closer','จับเหนือศอกแล้วดึงให้ชิดขึ้น'], O(STAND, {e:[102,44],w:[116,42]})),
+      V(['Pull and turn','ดึงและหมุนตัว'], ['Pull close and turn the chest slightly away','ดึงชิดและหมุนอกออกเล็กน้อย'], O(STAND, {s:[94,38],e:[106,42],w:[122,40]}))]),
+    tricepsoh: ST_('static', ['Overhead triceps stretch','ยืดหลังแขนเหนือหัว'], ['shoulders','back'], true, STAND, [
+      V(['Hand behind the head','มือแตะหลังศีรษะ'], ['Arm overhead, bend the elbow, hand behind the head','ยกแขนงอศอก มือแตะหลังศีรษะ'], O(STAND, {e:[94,20],w:[82,30]})),
+      V(['Pull the elbow','ดึงศอก'], ['Use the other hand to ease the elbow back','ใช้มืออีกข้างดึงศอกไปข้างหลังเบาๆ'], O(STAND, {e:[92,14],w:[78,26]})),
+      V(['Add a side lean','เอียงตัวเพิ่ม'], ['Keep the pull and lean to the side','ดึงค้างไว้แล้วเอียงตัวไปด้านข้าง'], O(STAND, {s:[94,40],h:[96,26],e:[98,14],w:[84,24]}))]),
+    latwall: ST_('static', ['Lat stretch at a wall','ยืดปีกที่ผนัง'], ['back','shoulders'], false, STAND, [
+      V(['Hands high, light hinge','มือสูง พับเล็กน้อย'], ['Hands on the wall at shoulder height, hips back','มือวางผนังระดับไหล่ ถอยสะโพกไปข้างหลัง'], {h:[122,58],s:[112,60],e:[130,58],w:[146,56],p:[80,78],k:[82,108],f:[82,134]}),
+      V(['Hinge to 90°','พับ 90 องศา'], ['Back flat, sink the chest between the arms','หลังตรง ยุบอกลงระหว่างแขน'], {h:[128,80],s:[118,76],e:[134,76],w:[148,74],p:[78,74],k:[82,108],f:[82,134]}),
+      V(['Chest low','อกต่ำ'], ['Sink further, arms long','ยุบลงมากขึ้น แขนยาว'], {h:[130,92],s:[120,86],e:[136,82],w:[148,78],p:[76,72],k:[82,108],f:[82,134]})], WALL),
+    hamstringst: ST_('static', ['Lying hamstring stretch','ยืดต้นขาหลังนอนหงาย'], ['hamstrings'], true, LIE, [
+      V(['Knee bent','งอเข่า'], ['On your back, hold the raised leg with the knee bent','นอนหงาย จับขาที่ยกขึ้นโดยงอเข่า'], O(LIE, {k:[100,98],f:[118,90],e:[76,112],w:[98,96]})),
+      V(['Straight leg','ขาเหยียด'], ['Straighten the leg, use a towel or strap if needed','เหยียดขา ใช้ผ้าช่วยได้'], O(LIE, {k:[106,102],f:[122,76],e:[80,112],w:[112,90]})),
+      V(['Leg vertical','ขาตั้งตรง'], ['Straight leg pulled to vertical or past it','ดึงขาเหยียดขึ้นตั้งตรงหรือเลยกว่านั้น'], O(LIE, {k:[94,96],f:[96,64],e:[72,108],w:[94,84]}))]),
+    quadstand: ST_('static', ['Standing quad stretch','ยืดต้นขาหน้ายืน'], ['quads'], true, STAND, [
+      V(['Foot toward the glute','ดึงเท้าเข้าหาก้น'], ['Hold a wall, pull the heel toward the glute','จับผนัง ดึงส้นเท้าเข้าหาก้น'], O(STAND, {k2:[88,108],f2:[78,96],e:[86,74],w:[80,96]})),
+      V(['Heel to glute','ส้นเท้าชิดก้น'], ['Knees together, heel to the glute','เข่าชิดกัน ส้นเท้าชิดก้น'], O(STAND, {k2:[88,108],f2:[74,86],e:[84,66],w:[76,84]})),
+      V(['Knee back','ดันเข่าไปข้างหลัง'], ['Squeeze the glute and move the knee slightly back','บีบก้นแล้วดันเข่าไปข้างหลังเล็กน้อย'], O(STAND, {k2:[80,110],f2:[66,86],e:[78,66],w:[68,84]}))]),
+    hipflexst: ST_('static', ['Kneeling hip flexor stretch','ยืดสะโพกหน้าคุกเข่า'], ['hips','quads'], true, KNEEL, [
+      V(['Upright','ตัวตรง'], ['Half kneel, tuck the pelvis, squeeze the back glute','คุกเข่าข้างเดียว ม้วนสะโพก บีบก้นขาหลัง'], {h:[94,46],s:[92,62],e:[104,82],w:[112,100],p:[88,100],k:[116,104],f:[120,134],k2:[70,132],f2:[44,134]}),
+      V(['Hips forward','ดันสะโพก'], ['Keep the tuck and shift the hips forward','ม้วนสะโพกค้างไว้ แล้วดันไปข้างหน้า'], {h:[92,50],s:[90,66],e:[94,86],w:[100,104],p:[92,108],k:[120,106],f:[124,134],k2:[70,132],f2:[44,134]}),
+      V(['Arm up, lean','ยกแขน เอียงตัว'], ['Raise the arm on the back-leg side and lean away','ยกแขนข้างขาหลังแล้วเอียงตัวออก'], {h:[82,54],s:[86,70],e:[84,46],w:[84,28],p:[94,110],k:[122,106],f:[126,134],k2:[70,132],f2:[44,134]})]),
+    glutest: ST_('static', ['Glute stretch (figure-four)','ยืดก้น (ไขว่ห้าง)'], ['hips'], true, LIEK, [
+      V(['Ankle on the knee','ข้อเท้าบนเข่า'], ['On your back, cross the ankle over the knee','นอนหงาย ไขว่ข้อเท้าวางบนเข่า'], {h:[26,126],s:[40,128],e:[60,128],w:[76,130],p:[86,128],k:[110,104],f:[116,132],k2:[114,112],f2:[100,100]}),
+      V(['Pull the legs in','ดึงขาเข้า'], ['Hold behind the thigh and pull toward the chest','จับหลังต้นขาแล้วดึงเข้าหาอก'], {h:[26,124],s:[40,128],e:[62,116],w:[98,104],p:[88,128],k:[112,100],f:[126,128],k2:[116,110],f2:[102,96]}),
+      V(['Pull closer','ดึงชิดขึ้น'], ['Pull the legs closer, keep the hips down','ดึงขาชิดขึ้น สะโพกติดพื้น'], {h:[26,124],s:[40,128],e:[60,112],w:[90,100],p:[88,128],k:[104,96],f:[118,118],k2:[108,106],f2:[96,92]})]),
+    calfwall: ST_('static', ['Calf stretch at a wall','ยืดน่องที่ผนัง'], ['calves'], true, STAND, [
+      V(['Short step','ก้าวสั้น'], ['Hands on the wall, back leg straight, heel down','มือวางผนัง ขาหลังเหยียด ส้นเท้าติดพื้น'], {h:[122,40],s:[112,48],e:[130,46],w:[146,44],p:[96,80],k:[112,108],f:[118,134],k2:[80,108],f2:[70,134]}),
+      V(['Longer step','ก้าวยาวขึ้น'], ['Step the back foot further back, heel still down','ถอยเท้าหลังไกลขึ้น ส้นเท้ายังติดพื้น'], {h:[126,46],s:[118,54],e:[134,52],w:[146,50],p:[98,84],k:[114,110],f:[120,134],k2:[70,108],f2:[58,134]}),
+      V(['Bend the back knee','งอเข่าหลัง'], ['Bend the back knee to reach the lower calf','งอเข่าหลังเพื่อยืดน่องส่วนล่าง'], {h:[124,50],s:[116,58],e:[132,56],w:[146,54],p:[94,92],k:[114,112],f:[120,134],k2:[78,114],f2:[62,134]})], WALL),
+    adductor: ST_('static', ['Side lunge stretch','ยืดขาด้านใน (Side lunge)'], ['groin'], true, WIDE, [
+      V(['Shallow','ระดับเบา'], ['Wide stance, shift to one side, other leg straight','ยืนกว้าง ถ่ายน้ำหนักไปข้างหนึ่ง อีกขาเหยียด'], {h:[98,30],s:[98,46],e:[98,64],w:[98,82],p:[98,88],k:[80,110],f:[66,134],k2:[110,112],f2:[122,134]}),
+      V(['Deep','ลึก'], ['Sit lower into the bent leg','ย่อลงที่ขาที่งอ'], {h:[106,48],s:[106,64],e:[106,82],w:[106,98],p:[108,104],k:[84,118],f:[62,134],k2:[122,108],f2:[124,134]}),
+      V(['Deep, hands down','ลึก มือแตะพื้น'], ['Hands on the floor, hips low','มือแตะพื้น สะโพกต่ำ'], {h:[112,70],s:[110,84],e:[110,104],w:[110,124],p:[108,106],k:[84,118],f:[62,134],k2:[122,108],f2:[124,134]})]),
+    forearmst: ST_('static', ['Forearm & wrist stretch','ยืดแขนท่อนล่างและข้อมือ'], ['wrists'], false, STAND, [
+      V(['Light pull','ดึงเบา'], ['Arm straight in front, gently pull the fingers back','เหยียดแขนไปข้างหน้า ดึงนิ้วกลับเบาๆ'], O(STAND, {e:[106,46],w:[122,46]})),
+      V(['Both directions','ทั้งสองทาง'], ['Pull the fingers back, then the back of the hand down','ดึงนิ้วขึ้น แล้วกดหลังมือลง'], O(STAND, {e:[106,44],w:[122,38]})),
+      V(['Palms on the floor','ฝ่ามือวางพื้น'], ['Kneel, palms down, fingers toward the knees','คุกเข่า วางฝ่ามือ นิ้วชี้หาเข่า'], O(QUAD, {s:[112,104],p:[64,106],h:[124,98]}))]),
+    neckst: ST_('static', ['Neck side stretch','ยืดคอด้านข้าง'], ['neck'], true, STAND, [
+      V(['Head tilt','เอียงศีรษะ'], ['Tilt the ear toward the shoulder','เอียงหูเข้าหาไหล่'], O(STAND, {h:[84,24]})),
+      V(['Hand assist','ใช้มือช่วย'], ['Rest the hand on the head for a light pull','วางมือบนศีรษะช่วยดึงเบาๆ'], O(STAND, {h:[80,26],e:[80,12],w:[80,20]})),
+      V(['Shoulder down','กดไหล่ลง'], ['Add: reach the other hand toward the floor','เพิ่ม: เอื้อมมืออีกข้างลงหาพื้น'], O(STAND, {h:[78,28],e:[92,62],w:[96,82]}))])
+  });
+  const AREA = {back:['Back & lats','หลังและปีก'], neck:['Neck','คอ'], hamstrings:['Hamstrings','ต้นขาหลัง'], hips:['Hips','สะโพก'], quads:['Quads','ต้นขาหน้า'], groin:['Inner thighs','ขาด้านใน'],
     calves:['Calves','น่อง'], spine:['Spine','กระดูกสันหลัง'], shoulders:['Shoulders','ไหล่'], chest:['Chest','อก'], wrists:['Wrists','ข้อมือ'], relax:['Relaxation','ผ่อนคลาย']};
 
   /* ---------- sessions ---------- */
-  const S = (id, icon, lvl, n, d, poses) => ({id, icon, lvl, n, d, poses});
+  const S = (id, icon, lvl, n, d, poses, group) => ({id, icon, lvl, n, d, poses, group:group || 'yoga'});
   const SESS = [
-    S('pre', '⚡', 1, ['Before training','ก่อนซ้อม'], ['Short mobility for joints and hips, holds of 30 s','ยืดเหยียดสั้นๆ ให้ข้อต่อและสะโพกพร้อม ค้างท่าละ 30 วินาที'],
-      [['downdog',30],['lowlunge',30],['threadneedle',30],['wristprep',40],['forwardfold',30],['sidebend',30]]),
-    S('post', '🧘', 1, ['After training','หลังซ้อม'], ['Calm static stretches for the whole body','ยืดค้างแบบผ่อนคลายทั้งตัว'],
-      [['childpose',45],['cobra',30],['pigeon',45],['forwardfold',45],['chestopen',30],['supinetwist',30],['savasana',60]]),
+    // stretching sessions (not yoga): dynamic before training, static after training
+    S('pre_full', '🔥', 1, ['Before training: full body','ก่อนซ้อม: ทั้งตัว'], ['Dynamic stretches that warm up every joint, about 6 minutes','ยืดแบบเคลื่อนไหวให้ทุกข้อต่อพร้อม ประมาณ 6 นาที'],
+      [['armcircles',30],['torsotwist',30],['catcow',30],['legswing',25],['hipcircle',30],['worldsgreatest',30],['inchworm',40],['deepsquat',40]], 'pre'),
+    S('pre_upper', '💪', 1, ['Before training: upper body & rings','ก่อนซ้อม: ช่วงบนและห่วง'], ['Shoulders, upper back and wrists ready for pushing, pulling and rings','เตรียมไหล่ หลังบน และข้อมือ สำหรับท่าดัน ดึง และห่วง'],
+      [['armcircles',30],['torsotwist',30],['catcow',30],['inchworm',40],['wristprep',40],['threadneedle',25]], 'pre'),
+    S('pre_lower', '🦵', 1, ['Before training: legs','ก่อนซ้อม: ขา'], ['Hips, hamstrings and ankles ready for squats, lunges and hinges','เตรียมสะโพก ต้นขาหลัง และข้อเท้า สำหรับ squat ลันจ์ และพับสะโพก'],
+      [['legswing',25],['hipcircle',30],['worldsgreatest',30],['deepsquat',45],['catcow',30],['inchworm',40]], 'pre'),
+    S('post_full', '🧊', 1, ['After training: full body','หลังซ้อม: ทั้งตัว'], ['Static stretches, held 30-40 s, for the whole body','ยืดค้าง 30-40 วินาที ทั้งตัว'],
+      [['doorchest',30],['latwall',40],['hamstringst',35],['hipflexst',30],['glutest',35],['calfwall',30]], 'post'),
+    S('post_upper', '🫁', 1, ['After training: upper body','หลังซ้อม: ช่วงบน'], ['Chest, shoulders, lats, arms, wrists and neck','อก ไหล่ ปีก แขน ข้อมือ และคอ'],
+      [['doorchest',30],['crossbody',30],['tricepsoh',30],['latwall',40],['forearmst',30],['neckst',20]], 'post'),
+    S('post_lower', '🧊', 1, ['After training: legs','หลังซ้อม: ขา'], ['Hamstrings, quads, hip flexors, glutes, inner thighs and calves','ต้นขาหลัง ต้นขาหน้า สะโพกหน้า ก้น ขาด้านใน และน่อง'],
+      [['hamstringst',35],['quadstand',30],['hipflexst',30],['glutest',35],['adductor',30],['calfwall',30]], 'post'),
     S('morning', '🌅', 1, ['Morning flow','โยคะตอนเช้า'], ['Wake up the spine and hips gently','ปลุกกระดูกสันหลังและสะโพกเบาๆ'],
       [['childpose',45],['cobra',30],['downdog',40],['lowlunge',30],['forwardfold',40],['sidebend',30],['savasana',60]]),
     S('bed', '🌙', 1, ['Bedtime relax','ผ่อนคลายก่อนนอน'], ['Slow, quiet stretches to unwind','ยืดช้าๆ เงียบๆ เพื่อผ่อนคลาย'],
@@ -142,18 +238,14 @@ const Yoga = (() => {
     S('deep', '🔥', 3, ['Deep flexibility','ยืดลึกขั้นสูง'], ['Long holds toward splits, pancake and backbends','ค้างนานเพื่อสปลิต แพนเค้ก และแอ่นหลัง'],
       [['downdog',60],['splitsprep',60],['lizard',60],['frog',90],['widefold',90],['pigeon',90],['camel',45],['bridge',45],['seatedfold',90],['savasana',90]])
   ];
-  // stretches matched to the muscles a workout used, for the cool-down
-  function forWorkout(exIds){
-    const ms = new Set(); exIds.forEach(id => EX[id] && EX[id].p.concat(EX[id].s).forEach(m => ms.add(m)));
-    const out = [];
-    if(['chest','shoulders','triceps'].some(m => ms.has(m))) out.push(['chestopen',30], ['threadneedle',30]);
-    if(['lats','upperback','biceps'].some(m => ms.has(m))) out.push(['childpose',45]);
-    if(['quads','glutes'].some(m => ms.has(m))) out.push(['lowlunge',30], ['pigeon',40]);
-    if(['hamstrings','calves'].some(m => ms.has(m))) out.push(['forwardfold',40]);
-    if(ms.has('core')) out.push(['cobra',30]);
-    out.push(['supinetwist',30], ['savasana',45]);
-    return out;
+  // pick the stretching session that matches the muscles of a workout
+  function zoneOf(exIds){
+    let up = 0, lo = 0;
+    exIds.forEach(id => (EX[id] ? EX[id].p : []).forEach(m => { if(['chest','shoulders','triceps','lats','upperback','biceps'].includes(m)) up++; if(['quads','glutes','hamstrings','calves'].includes(m)) lo++; }));
+    return up && lo && Math.min(up, lo) / Math.max(up, lo) > .3 ? 'full' : lo > up ? 'lower' : up ? 'upper' : 'full';
   }
+  const preFor = exIds => SESS.find(s => s.id === 'pre_' + zoneOf(exIds));
+  const postFor = exIds => SESS.find(s => s.id === 'post_' + zoneOf(exIds));
 
   /* ---------- per-pose level memory ---------- */
   const defLvl = () => SET.exp === 'exp' ? 2 : 1;
@@ -182,29 +274,34 @@ const Yoga = (() => {
     app.innerHTML = `<h1>🧘 ${t('yg_title')}</h1><p class="sub">${t('yg_sub')}</p>
       <div class="card"><div class="row"><b class="grow">${t('yg_week')}</b><b>${wk} ${t('minutes')}</b></div>
         <small>${t('yg_week_note')}</small></div>
-      <h2>${t('yg_sessions')}</h2>
-      ${[1, 2, 3].map(lv => `<div class="lbl-sm">${t('lvl_' + lv)}</div><div class="grid2">${SESS.filter(s => s.lvl === lv).map(s => `<div class="card sess tile" data-ys="${s.id}">
-        <div class="emoji">${s.icon}</div><b>${L(s.n)}</b><small>${Math.round(totalSec(s.poses) / 60)} ${t('minutes')} · ${t('yg_n_poses', s.poses.length)}</small></div>`).join('')}</div>`).join('')}
+      <h2>🤸 ${t('st_title')}</h2><p class="sub">${t('st_intro')}</p>
+      ${['pre', 'post'].map(g => `<div class="lbl-sm">${t('st_' + g)}</div><small class="note" style="margin-top:-4px">${t('st_' + g + '_note')}</small>
+        <div class="grid2" style="margin-bottom:10px">${SESS.filter(s => s.group === g).map(tile).join('')}</div>`).join('')}
+      <h2>🧘 ${t('yg_yoga')}</h2>
+      ${[1, 2, 3].map(lv => `<div class="lbl-sm">${t('lvl_' + lv)}</div><div class="grid2">${SESS.filter(s => s.group === 'yoga' && s.lvl === lv).map(tile).join('')}</div>`).join('')}
       <h2>${t('yg_profile')}</h2><div class="card"><small>${t('yg_profile_note')}</small>
         ${areas.map(a => `<div class="bar-row"><span class="lbl">${L(AREA[a])}</span><div class="track"><div class="fill" style="width:${Math.round(areaLvl(a) / 3 * 100)}%"></div></div><span class="n">${areaLvl(a).toFixed(1)}/3</span></div>`).join('')}</div>
-      <h2>${t('yg_poses')}</h2>
-      ${Object.keys(POSES).filter(id => id !== 'savasana').map(id => `<div class="card sess item" data-yp="${id}"><div class="row"><div class="grow"><b>${L(POSES[id].n)}</b><br>
+      <h2>${t('yg_poses')}</h2>${segHTML('ylib', [['stretch', t('yg_lib_stretch')], ['yoga', t('yg_lib_yoga')]], view.lib || 'stretch')}
+      ${Object.keys(POSES).filter(id => id !== 'savasana' && ((view.lib || 'stretch') === 'yoga' ? !POSES[id].kind : !!POSES[id].kind)).map(id => `<div class="card sess item" data-yp="${id}"><div class="row"><div class="grow"><b>${L(POSES[id].n)}</b><br>
         <small>${POSES[id].a.map(a => L(AREA[a])).join(' · ')}${POSES[id].side ? ' · ' + t('yg_bothsides') : ''}</small></div><span class="tag">${'●'.repeat(lvlOf(id))}${'○'.repeat(3 - lvlOf(id))}</span></div></div>`).join('')}`;
     on('[data-ys]', el => go('yoga', {name:'ysess', id:el.dataset.ys}));
     on('[data-yp]', el => go('yoga', {name:'ypose', id:el.dataset.yp}));
+    on('[data-ylib]', el => { view.lib = el.dataset.ylib; render(); });
   }
+  const tile = s => `<div class="card sess tile" data-ys="${s.id}"><div class="emoji">${s.icon}</div><b>${L(s.n)}</b>
+    <small>${Math.round(totalSec(s.poses) / 60)} ${t('minutes')} · ${t('yg_n_poses', s.poses.length)}</small></div>`;
   function poseView(){
     const id = view.id, p = POSES[id], cur = lvlOf(id), show = view.show || cur, v = p.lv[show - 1];
     app.innerHTML = `<button class="chip" id="back">← ${t('back')}</button><h1>${L(p.n)}</h1>
-      <div class="chips" style="margin:0 0 10px">${p.a.map(a => `<span class="chip p">${L(AREA[a])}</span>`).join('')}${p.side ? `<span class="chip">${t('yg_bothsides')}</span>` : ''}</div>
+      <div class="chips" style="margin:0 0 10px">${p.kind ? `<span class="chip">${t('st_kind_' + p.kind)}</span>` : ''}${p.a.map(a => `<span class="chip p">${L(AREA[a])}</span>`).join('')}${p.side ? `<span class="chip">${t('yg_bothsides')}</span>` : ''}</div>
       ${lvlChips(id, show, 'yshow')}
       <div class="card ${cur === show ? 'hl' : ''}"><div class="row"><b class="grow">${L(v.n)}</b>
         ${cur === show ? `<span class="chip p">${t('yg_yours')}</span>` : `<button class="chip" id="ysetl">${t('yg_pick')}</button>`}</div>
         ${figSVG('figure')}<small>${L(v.d)}</small></div>
       ${p.lv.map((x, i) => `<div class="setrow"><span>${'●'.repeat(i + 1)}${'○'.repeat(2 - i)}</span><small class="grow">${L(x.n)}</small>${cur === i + 1 ? '✓' : ''}</div>`).join('')}
       <small class="note">${t('yg_safety')}</small>`;
-    startAnim(document.getElementById('figure'), {A:p.base, B:v.pose});
-    $('#back').onclick = () => go('yoga');
+    startAnim(document.getElementById('figure'), {A:p.base, B:v.pose, deco:p.deco});
+    $('#back').onclick = () => go('yoga', {name:'home', lib:p.kind ? 'stretch' : 'yoga'});
     on('[data-yshow]', el => { view.show = +el.dataset.yshow; render(); });
     if($('#ysetl')) $('#ysetl').onclick = () => { YLVL[id] = show; YFEEL[id] = 0; save(); render(); };
   }
@@ -233,7 +330,7 @@ const Yoga = (() => {
         <div class="track grow"><div class="fill" style="width:${v.i / v.st.length * 100}%"></div></div><small>${v.i + 1}/${v.st.length}</small></div>
       ${v.ask ? `<div class="card hl"><small>${t('yg_how', L(POSES[v.ask].n))}</small><div class="row gap" style="margin-top:6px">
         <button class="btn ghost small" data-feel="hard">😣 ${t('yg_hard')}</button><button class="btn ghost small" data-feel="ok">🙂 ${t('yg_ok')}</button><button class="btn ghost small" data-feel="easy">😌 ${t('yg_easy')}</button></div></div>` : ''}
-      <div class="lbl-sm">${v.kind === 'cool' ? '🧘 ' + t('rt_cool') : L(v.sess.n)}${step.side ? ' · ' + t(step.side === 1 ? 'yg_side1' : 'yg_side2') : ''}</div>
+      <div class="lbl-sm">${v.kind === 'cool' ? '🧊 ' + t('rt_cool') : v.kind === 'warm' ? '🔥 ' + t('rt_warm') : L(v.sess.n)}${step.side ? ' · ' + t(step.side === 1 ? 'yg_side1' : 'yg_side2') : ''}</div>
       <h1>${L(p.n)}</h1>
       ${step.id !== 'savasana' ? lvlChips(step.id, lv, 'ylv') : ''}
       ${figSVG('figure')}
@@ -241,7 +338,7 @@ const Yoga = (() => {
       <div class="card center"><b class="bigtime" id="yt">${fmtTime(step.sec)}</b>
         <div class="row gap"><button class="btn ghost" id="yprev" ${v.i === 0 ? 'disabled' : ''}>←</button><button class="btn" id="ypause">${v.paused ? '▶ ' + t('yg_resume') : '⏸ ' + t('yg_pause')}</button><button class="btn ghost" id="ynext">⏭</button></div></div>
       ${next ? `<small class="note">${t('up_next')}: ${L(POSES[next.id].n)}${next.side === 2 ? ' (' + t('yg_side2') + ')' : ''}</small>` : ''}`;
-    startAnim(document.getElementById('figure'), {A:p.base, B:lvl.pose});
+    startAnim(document.getElementById('figure'), {A:p.base, B:lvl.pose, deco:p.deco});
     if(v.remain == null) v.remain = step.sec;
     if(v.iv) clearInterval(v.iv);
     let last = -1; v.end = Date.now() + v.remain * 1000;
@@ -273,7 +370,7 @@ const Yoga = (() => {
     const v = view; if(v.iv) clearInterval(v.iv);
     const sec = v.done.reduce((s, d) => s + d.sec, 0);
     if(sec > 0){ YLOG.push({id:newId(), t:Date.now(), sess:v.sess.id || v.kind, min:Math.round(sec / 6) / 10, poses:v.done.map(d => [d.id, d.lvl])}); save(); }
-    if(v.kind === 'cool') return v.after();
+    if(v.kind === 'cool' || v.kind === 'warm') return v.after();
     Sound.play('finish');
     view = {name:'ysum', sess:v.sess, sec, n:v.done.length, after:v.after, ask:v.ask};
     render(); window.scrollTo(0, 0);
@@ -296,5 +393,5 @@ const Yoga = (() => {
   }
   function clear(){ YLOG = []; YLVL = {}; YFEEL = {}; save(); }
   function summary(){ return `${minutesSince(Date.now() - 7*DAY)} min this week; pose levels: ` + (Object.entries(YLVL).map(([k, v]) => k + ' ' + v + '/3').join(', ') || 'defaults'); }
-  return {load, save, POSES, SESS, forWorkout, start, homeView, poseView, sessView, runView, sumView, minutesSince, exportState, importState, clear, summary};
+  return {load, save, POSES, SESS, preFor, postFor, start, homeView, poseView, sessView, runView, sumView, minutesSince, exportState, importState, clear, summary};
 })();
