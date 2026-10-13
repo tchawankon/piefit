@@ -553,8 +553,9 @@ function sessionView(){
     ${s.cal ? '' : `<div class="card"><div class="row"><b class="grow">⏱ ${t('tb_title')}</b><small>${t('tb_est', fit.est)}</small></div>
       <div class="chips">${[0, 20, 30, 45, 60, 90].map(m => `<button class="chip ${view.budget === m ? 'on' : ''}" data-bud="${m}">${m ? m + ' ' + t('minutes') : t('tb_any')}</button>`).join('')}</div>
       ${fit.changed.length ? `<small style="display:block;margin-top:6px">${fit.changed.map(c => t('tb_' + c)).join(' · ')}</small>` : ''}
-      <div class="row" style="margin-top:10px"><label class="row grow"><input type="checkbox" id="cwarm" ${P.warm ? 'checked' : ''}> <small>🔥 ${t('rt_warm')}</small></label>
-        <label class="row grow"><input type="checkbox" id="ccool" ${P.cool ? 'checked' : ''}> <small>🧘 ${t('rt_cool')}</small></label></div></div>`}
+      <div class="row wrap" style="margin-top:10px;gap:12px"><label class="row"><input type="checkbox" id="cwarm" ${P.warm ? 'checked' : ''}> <small>🔥 ${t('wu_title')}</small></label>
+        <label class="row"><input type="checkbox" id="cpre" ${P.prestr ? 'checked' : ''}> <small>🤸 ${t('rt_warm')}</small></label>
+        <label class="row"><input type="checkbox" id="ccool" ${P.cool ? 'checked' : ''}> <small>🧊 ${t('rt_cool')}</small></label></div></div>`}
     <div class="chips" style="margin:0 0 10px">${[...prim].map(m => `<span class="chip p">${M(m)}</span>`).join('')}</div>` +
     list.map((id, i) => { const x = EX[id], sg = suggest(id), mate = fit.pairs[i];
       const src = view.list.indexOf(id);
@@ -568,6 +569,7 @@ function sessionView(){
   on('[data-bud]', el => { view.budget = +el.dataset.bud; render(); });
   if($('#cwarm')) $('#cwarm').onchange = e => { P.warm = e.target.checked; Coach.save(); render(); };
   if($('#ccool')) $('#ccool').onchange = e => { P.cool = e.target.checked; Coach.save(); render(); };
+  if($('#cpre')) $('#cpre').onchange = e => { P.prestr = e.target.checked; Coach.save(); render(); };
   on('[data-swap]', el => { const i = +el.dataset.swap, id = view.list[i];
     pickExercise(t('swap') + ': ' + EX[id].name, t('swap_hint'), alternatives(id), nid => { view.list[i] = nid; render(); }); });
   on('[data-del]', el => { view.list.splice(+el.dataset.del, 1); render(); });
@@ -580,7 +582,12 @@ function sessionView(){
       if(ready && ready.pain.length){ const r = Coach.applyLimits(l, SET.venue, ready.pain, true); l = r.list; if(r.changes.length) toast(t('ck_swapped', Coach.areaNames(ready.pain))); }
       const f = Coach.fit(l, view.budget, m.sets);
       const begin = () => startWorkout(s.id, f.list, false, {sets:f.sets, pairs:f.pairs, ready, wMul:m.wMul, tag:m.tag});
-      if(Coach.prof.warm && f.list.length) Yoga.start(Yoga.preFor(f.list), begin, {kind:'warm'}); else begin();
+      const pr = Coach.prof, steps = [];
+      if(pr.warm && f.list.length) steps.push(next => Coach.startRoutine('warm', Coach.warmup(f.list, pr.prestr), next));
+      if(pr.prestr && f.list.length) steps.push(next => Yoga.start(Yoga.preFor(f.list), next, {kind:'warm'}));
+      if(pr.warm && Coach.ramp(f.list).length) steps.push(next => Coach.startRoutine('warm', Coach.ramp(f.list), next));
+      const run = i => i < steps.length ? steps[i](() => run(i + 1)) : begin();
+      run(0);
     });
   };
 }

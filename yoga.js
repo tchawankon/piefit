@@ -326,11 +326,12 @@ const Yoga = (() => {
     const v = view, step = v.st[v.i];
     if(!step) return finish();
     const p = POSES[step.id], lv = lvlOf(step.id), lvl = p.lv[lv - 1], next = v.st[v.i + 1];
-    app.innerHTML = `<div class="runbar"><button class="chip" id="yq">✕</button>
+    const routine = v.kind === 'warm' || v.kind === 'cool';
+    app.innerHTML = `<div class="runbar"><button class="chip" id="yq">${routine ? t('rt_skip') + ' ⏭' : '✕'}</button>
         <div class="track grow"><div class="fill" style="width:${v.i / v.st.length * 100}%"></div></div><small>${v.i + 1}/${v.st.length}</small></div>
       ${v.ask ? `<div class="card hl"><small>${t('yg_how', L(POSES[v.ask].n))}</small><div class="row gap" style="margin-top:6px">
         <button class="btn ghost small" data-feel="hard">😣 ${t('yg_hard')}</button><button class="btn ghost small" data-feel="ok">🙂 ${t('yg_ok')}</button><button class="btn ghost small" data-feel="easy">😌 ${t('yg_easy')}</button></div></div>` : ''}
-      <div class="lbl-sm">${v.kind === 'cool' ? '🧊 ' + t('rt_cool') : v.kind === 'warm' ? '🔥 ' + t('rt_warm') : L(v.sess.n)}${step.side ? ' · ' + t(step.side === 1 ? 'yg_side1' : 'yg_side2') : ''}</div>
+      <div class="lbl-sm">${v.kind === 'cool' ? '🧊 ' + t('rt_cool') : v.kind === 'warm' ? '🤸 ' + t('rt_warm') : L(v.sess.n)}${step.side ? ' · ' + t(step.side === 1 ? 'yg_side1' : 'yg_side2') : ''}</div>
       <h1>${L(p.n)}</h1>
       ${step.id !== 'savasana' ? lvlChips(step.id, lv, 'ylv') : ''}
       ${figSVG('figure')}
@@ -364,7 +365,7 @@ const Yoga = (() => {
     $('#ypause').onclick = () => { v.paused = !v.paused; if(!v.paused) v.end = Date.now() + v.remain * 1000; $('#ypause').textContent = v.paused ? '▶ ' + t('yg_resume') : '⏸ ' + t('yg_pause'); };
     $('#ynext').onclick = advance;
     $('#yprev').onclick = () => { clearInterval(v.iv); v.iv = null; v.remain = null; v.i = Math.max(0, v.i - 1); render(); };
-    $('#yq').onclick = () => { if(v.done.length && !confirm(t('yg_quit'))) return; clearInterval(v.iv); v.i = v.st.length; finish(); };
+    $('#yq').onclick = () => { if(!routine && v.done.length && !confirm(t('yg_quit'))) return; clearInterval(v.iv); v.i = v.st.length; finish(); };
   }
   function finish(){
     const v = view; if(v.iv) clearInterval(v.iv);

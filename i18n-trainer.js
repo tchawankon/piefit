@@ -216,3 +216,7 @@ Object.assign(STR.th, {
   in_stretch:'สัปดาห์นี้ยังไม่ได้ยืดเลย ลองเซสชัน "หลังซ้อม" (ประมาณ 6 นาที)',
   s_push:'อก', s_pull:'หลัง'
 });
+
+// ---- warm-up as its own step again
+Object.assign(STR.en, {wu_title:'Warm-up', pf_routine:'Before and after workouts'});
+Object.assign(STR.th, {wu_title:'วอร์มอัพ', pf_routine:'ก่อนและหลังซ้อม'});

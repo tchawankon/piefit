@@ -7,7 +7,7 @@ const Coach = (() => {
   const WEEK_DEFAULT = () => Array.from({length:7}, () => ({on:false, venue:'rings', min:45}));
   function load(){
     const p = store.get('profile', {});
-    PROF = Object.assign({limits:[], week:WEEK_DEFAULT(), warm:true, cool:true, deloadUntil:0, lastDeload:0, aiOn:false}, isObj(p) ? p : {});
+    PROF = Object.assign({limits:[], week:WEEK_DEFAULT(), warm:true, prestr:true, cool:true, deloadUntil:0, lastDeload:0, aiOn:false}, isObj(p) ? p : {});
     if(!Array.isArray(PROF.week) || PROF.week.length !== 7) PROF.week = WEEK_DEFAULT();
     if(!Array.isArray(PROF.limits)) PROF.limits = [];
     CHECKS = Array.isArray(store.get('checks')) ? store.get('checks') : [];
@@ -107,7 +107,7 @@ const Coach = (() => {
     });
     return {list:out, pairs};
   }
-  function extraMin(){ return (PROF.warm ? 5 : 0) + (PROF.cool ? 4 : 0); }
+  function extraMin(){ return (PROF.warm ? 4 : 0) + (PROF.prestr ? 5 : 0) + (PROF.cool ? 6 : 0); }
   // fit a session into a time budget: supersets first, then 2 sets, then drop the lowest-priority exercises
   function fit(list, minutes, sets0){
     sets0 = sets0 || SETS;
@@ -198,15 +198,18 @@ const Coach = (() => {
   };
   const moveAnim = m => m.anim || (m.animOf && EX[m.animOf] && EX[m.animOf].anim) || null;
   const has = (list, pats) => list.some(id => pats.includes(EX[id].pat) || (pats.includes('hold') && EX[id].hold));
-  function warmup(list){
+  // general warm-up (heat + activation). When the dynamic stretch also runs, the moves it already covers are left out.
+  const IN_STRETCH = ['armcircle','legswing','hipcircle','catcow'];
+  function warmup(list, dedupe){
     const s = ['march', 'armcircle'];
     if(has(list, ['hpush','vpush','triceps','hold'])) s.push('scap', 'wrist');
     if(has(list, ['vpull','hpull','biceps','reardelt']) && list.some(id => ['rings','bar','trx'].includes(eqOf(EX[id])))) s.push('scappull');
     if(has(list, ['squat','lunge','hinge','legcurl','hipext','calf','legext'])) s.push('legswing', 'hipcircle', 'bwsq');
     if(has(list, ['core'])) s.push('catcow');
-    if(list.some(id => EX[id].load)) s.push('ramp');
-    return s;
+    return dedupe ? s.filter(m => !IN_STRETCH.includes(m)) : s;
   }
+  // light ramp-up set right before the first weighted lift
+  const ramp = list => list.some(id => EX[id].load) ? ['ramp'] : [];
   function cooldown(list){
     const s = [];
     if(has(list, ['hpush','vpush','triceps'])) s.push('chest');
@@ -220,9 +223,9 @@ const Coach = (() => {
     const v = view, id = v.steps[v.i], m = MOVES[id];
     if(!m){ return v.after(); }
     const anim = moveAnim(m);
-    app.innerHTML = `<div class="runbar"><button class="chip" id="rskip">${t('rt_skip')}</button>
+    app.innerHTML = `<div class="runbar"><button class="chip" id="rskip">${t('rt_skip')} ⏭</button>
         <div class="track grow"><div class="fill" style="width:${v.i / v.steps.length * 100}%"></div></div><small>${v.i + 1}/${v.steps.length}</small></div>
-      <div class="lbl-sm">${v.kind === 'warm' ? '🔥 ' + t('rt_warm') : '🧘 ' + t('rt_cool')}</div>
+      <div class="lbl-sm">${v.kind === 'warm' ? '🔥 ' + t('wu_title') : '🧘 ' + t('rt_cool')}</div>
       <h1>${L(m.n)}</h1>${anim ? figSVG('figure') : ''}
       <p>${L(m.d)}</p>
       <div class="card center">${m.sec ? `<b class="bigtime" id="rt">${fmtTime(m.sec)}</b>` : `<b class="bigtime">× ${m.reps}</b>`}
@@ -434,12 +437,14 @@ const Coach = (() => {
         <small>${t('pf_limits_note')}</small></div>
       ${PROF.limits.length ? `<div class="card"><b>${t('pf_avoided')}</b><div class="chips">${Object.keys(EX).filter(id => stresses(id, PROF.limits, false)).map(id => `<span class="chip">${exName(id)}</span>`).join('')}</div></div>` : ''}
       <div class="card"><b>${t('pf_routine')}</b>
-        <div class="row" style="margin-top:8px"><span class="grow">🔥 ${t('rt_warm')}</span>${segHTML('pw', [['1', t('on')], ['0', t('off')]], PROF.warm ? '1' : '0').replace('class="seg"', 'class="seg" style="margin:0;width:150px"')}</div>
+        <div class="row" style="margin-top:8px"><span class="grow">🔥 ${t('wu_title')}</span>${segHTML('pw', [['1', t('on')], ['0', t('off')]], PROF.warm ? '1' : '0').replace('class="seg"', 'class="seg" style="margin:0;width:150px"')}</div>
+        <div class="row" style="margin-top:8px"><span class="grow">🤸 ${t('rt_warm')}</span>${segHTML('pps', [['1', t('on')], ['0', t('off')]], PROF.prestr ? '1' : '0').replace('class="seg"', 'class="seg" style="margin:0;width:150px"')}</div>
         <div class="row" style="margin-top:8px"><span class="grow">🧘 ${t('rt_cool')}</span>${segHTML('pc', [['1', t('on')], ['0', t('off')]], PROF.cool ? '1' : '0').replace('class="seg"', 'class="seg" style="margin:0;width:150px"')}</div></div>
       <small class="note">${t('pf_disclaimer')}</small>`;
     $('#back').onclick = () => go('more');
     on('[data-lim]', el => { const a = el.dataset.lim; PROF.limits = PROF.limits.includes(a) ? PROF.limits.filter(x => x !== a) : PROF.limits.concat(a); save(); render(); });
     on('[data-pw]', el => { PROF.warm = el.dataset.pw === '1'; save(); render(); });
+    on('[data-pps]', el => { PROF.prestr = el.dataset.pps === '1'; save(); render(); });
     on('[data-pc]', el => { PROF.cool = el.dataset.pc === '1'; save(); render(); });
   }
 
@@ -560,6 +565,6 @@ Do not invent numbers that are not in the data; say what is missing instead.`;
 
   return {load, save, get prof(){ return PROF; }, get goals(){ return GOALS; },
     AREAS, stresses, applyLimits, areaNames, checkIn, dayMod, deloadOn, fit, estimate, planToday, stripHTML, rotation,
-    warmup, cooldown, routineView, startRoutine, plateau, deloadAdvice, startDeload, stopDeload, review, insights,
+    warmup, ramp, cooldown, routineView, startRoutine, plateau, deloadAdvice, startDeload, stopDeload, review, insights,
     goalCard, goalProgress, goalsView, reviewView, planView, profileView, AI, exportState, importState, planOn};
 })();
