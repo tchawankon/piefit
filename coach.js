@@ -300,7 +300,7 @@ const Coach = (() => {
     const g = setsByGroup(a, now + 1), ch = CHECKS.filter(c => c.t >= a);
     const ready = ch.length ? (ch.reduce((s, c) => s + c.sleep + c.energy + c.sore, 0) / ch.length).toFixed(1) : null;
     const plan = planToday();
-    return {cur:stat(cur), prev:stat(prev), prs, push:g.push, pull:g.pull, ready, checks:ch.length,
+    return {yogaMin: typeof Yoga !== 'undefined' ? Yoga.minutesSince(a) : 0, cur:stat(cur), prev:stat(prev), prs, push:g.push, pull:g.pull, ready, checks:ch.length,
       planDone: plan ? plan.status.filter(Boolean).length : null, planTotal: plan ? plan.rot.length : null};
   }
   function insights(){
@@ -323,6 +323,7 @@ const Coach = (() => {
     if(lag.length && dowIdx(now) >= 3) out.push(['🎯', t('in_lag', lag.map(M).join(', '))]);
     GOALS.forEach(gl => { const p = goalProgress(gl); if(p.status === 'behind') out.push(['🚩', t('in_goal_behind', exName(gl.ex))]); });
     if(r.ready != null && r.ready < 2.5 && r.checks >= 2) out.push(['😴', t('in_tired')]);
+    if(r.cur.workouts >= 2 && r.yogaMin < 5) out.push(['🧘', t('in_stretch')]);
     if(!out.length) out.push(['✅', LOG.length ? t('in_good') : t('in_start')]);
     return out;
   }
@@ -395,6 +396,7 @@ const Coach = (() => {
         <div class="card stat"><b>${r.cur.vol}</b><small>${t('volume_kg')} ${d(r.cur.vol, r.prev.vol)}</small></div></div>
       <small class="note">${t('rv_vs', r.prev.workouts, r.prev.sets, r.prev.vol)}</small>
       ${r.planTotal != null ? `<div class="card"><b>📅 ${t('rv_plan')}</b><br><small>${t('rv_plan_n', r.planDone, r.planTotal)}</small></div>` : ''}
+      <div class="card"><b>🧘 ${t('rv_yoga')}</b><br><small>${t('rv_yoga_n', r.yogaMin)}</small></div>
       <div class="card"><b>⚖️ ${t('rv_balance')}</b><br><small>${t('rv_balance_n', r.push, r.pull)}</small></div>
       ${r.ready != null ? `<div class="card"><b>😴 ${t('rv_ready')}</b><br><small>${t('rv_ready_n', r.ready, r.checks)}</small></div>` : ''}
       ${r.prs.length ? `<div class="card"><b>🏆 ${t('rv_prs')}</b><div class="chips">${r.prs.map(id => `<span class="chip p">${exName(id)}</span>`).join('')}</div></div>` : ''}
@@ -466,6 +468,7 @@ const Coach = (() => {
         `Goals: ` + (GOALS.map(g => { const p = goalProgress(g); return `${exName(g.ex)} ${g.target}${goalUnit(g)} by ${new Date(g.deadline).toISOString().slice(0, 10)} (now ${p.val}, ${p.status})`; }).join('; ') || 'none'),
         `Readiness check-ins last 7 days: ` + (CHECKS.filter(c => c.t > now - 7*DAY).map(c => `${new Date(c.t).toISOString().slice(5, 10)} ${c.level}${c.pain && c.pain.length ? ' pain:' + c.pain.join('/') : ''}`).join(', ') || 'none'),
         `Body: ` + (typeof Body !== 'undefined' ? Body.summary() : 'n/a'),
+        `Yoga / stretching: ` + (typeof Yoga !== 'undefined' ? Yoga.summary() : 'n/a'),
         `App insights: ` + insights().map(i => i[1]).join(' | '),
         `Sets in the last 28 days (date reps@weight/rpe, rpe 1=easy 2=ok 3=hard 4=failure):`,
         ...(lines.length ? lines : ['- none yet'])

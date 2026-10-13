@@ -33,7 +33,7 @@ function loadState(){
   }
   if(!VENUE_EQ[SET.venue]) SET.venue = 'rings';
   SET.sfx = Object.assign({}, SET_DEFAULT.sfx, isObj(SET.sfx) ? SET.sfx : {});
-  Coach.load(); Body.load();
+  Coach.load(); Body.load(); Yoga.load();
 }
 function persist(){
   store.set('log', LOG); store.set('mastered', MASTERED); store.set('news', NEWS);
@@ -413,7 +413,7 @@ function pickExercise(title, hint, ids, onPick){
 
 /* ================= routing ================= */
 let tab = 'home', view = {name:'home'};
-const TABS = [['home','🏠','tab_home'], ['lib','📚','tab_lib'], ['prog','📈','tab_prog'], ['more','☰','tab_more']];
+const TABS = [['home','🏠','tab_home'], ['lib','📚','tab_lib'], ['yoga','🧘','tab_yoga'], ['prog','📈','tab_prog'], ['more','☰','tab_more']];
 function go(tb, v){ tab = tb; view = v || {name:'home'}; render(); window.scrollTo(0, 0); }
 let wakeLock = null;
 async function keepAwake(on){
@@ -433,14 +433,15 @@ function render(){
   if(view.timer){ clearInterval(view.timer.iv); view.timer = null; }
   document.documentElement.lang = SET.lang;
   if(!SET.onboarded && view.name !== 'onboard') view = {name:'onboard'};
-  const full = ['run','onboard','summary','routine'].includes(view.name);
+  const full = ['run','onboard','summary','routine','yrun','ysum'].includes(view.name);
   nav.style.display = full ? 'none' : 'flex';
   document.body.classList.toggle('nonav', full);
   nav.innerHTML = TABS.map(([k, i, l]) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}"><span class="ic">${i}</span>${t(l)}</button>`).join('');
   nav.querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.tab));
   const V = {session:sessionView, run:runView, summary:summaryView, onboard:onboardView, detail:detailView,
-    paths:pathsView, guide:guideView, settings:settingsView, routine:Coach.routineView, plan:Coach.planView, profile:Coach.profileView, coach:Coach.AI.view};
-  if(view.name === 'home') ({home:homeView, lib:libView, prog:progView, more:moreView})[tab]();
+    paths:pathsView, guide:guideView, settings:settingsView, routine:Coach.routineView, plan:Coach.planView, profile:Coach.profileView, coach:Coach.AI.view,
+    ysess:Yoga.sessView, ypose:Yoga.poseView, yrun:Yoga.runView, ysum:Yoga.sumView};
+  if(view.name === 'home') ({home:homeView, lib:libView, yoga:Yoga.homeView, prog:progView, more:moreView})[tab]();
   else V[view.name]();
 }
 
@@ -788,7 +789,7 @@ function finishWorkout(){
   sum.fresh = true; tab = 'home';
   if(Coach.prof.cool && ids.length && !view.cal){
     const exs = [...new Set(ids.map(i => (LOG.find(l => l.id === i) || {}).ex).filter(e => EX[e]))];
-    Coach.startRoutine('cool', Coach.cooldown(exs), () => { view = sum; render(); window.scrollTo(0, 0); });
+    Yoga.start({id:'cool', icon:'🧘', n:['Cool-down','คูลดาวน์'], d:['',''], poses:Yoga.forWorkout(exs)}, () => { tab = 'home'; view = sum; render(); window.scrollTo(0, 0); }, {kind:'cool'});
     return;
   }
   view = sum; render(); window.scrollTo(0, 0);
@@ -1011,13 +1012,13 @@ function settingsView(){
   $('#wipe').onclick = () => {
     if(!confirm(t('clear_confirm'))) return;
     LOG = []; MASTERED = {}; NEWS = []; CAL = {}; ACTIVE = null; store.set('active', null);
-    Coach.importState({checks:[], goals:[]}); Body.entries = []; store.set('chat', []);
+    Coach.importState({checks:[], goals:[]}); Body.entries = []; store.set('chat', []); Yoga.clear();
     try { indexedDB.deleteDatabase('piefit'); } catch(e){}
     persist(); toast(t('cleared')); render();
   };
 }
 function exportData(){
-  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries}, Coach.exportState());
+  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries}, Coach.exportState(), Yoga.exportState());
   const name = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => alert(t('export_fail'))); return; }
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
@@ -1036,7 +1037,7 @@ function importData(file){
     LOG = d.log.filter(l => l && typeof l.ex === 'string' && typeof l.t === 'number' && typeof l.reps === 'number')
       .map((l, i) => { const o = {id: typeof l.id === 'string' ? l.id : l.t + '-' + i, t:l.t, sess:String(l.sess || ''), ex:l.ex, reps:l.reps};
         if(typeof l.w === 'number') o.w = l.w; if(l.cal) o.cal = true; if([1, 2, 3, 4].includes(l.rpe)) o.rpe = l.rpe; return o; });
-    Coach.importState(d);
+    Coach.importState(d); Yoga.importState(d);
     if(Array.isArray(d.body)) Body.entries = d.body.filter(e => isObj(e) && typeof e.t === 'number');
     MASTERED = isObj(d.mastered) ? d.mastered : {};
     NEWS = Array.isArray(d.news) ? d.news.filter(n => typeof n === 'string' || isObj(n)) : [];

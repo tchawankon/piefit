@@ -165,3 +165,33 @@ Object.assign(STR.th, {
   ai_err_net:'ไม่มีอินเทอร์เน็ต', ai_err_api:'บริการ AI ตอบกลับผิดพลาด ({0}) ลองใหม่ภายหลัง', ai_err_load:'เชื่อมต่อบริการ AI ไม่ได้',
   ai_err_refusal:'โค้ชตอบคำถามนี้ไม่ได้ ลองถามแบบอื่น'
 });
+
+// ---- yoga & stretching
+Object.assign(STR.en, {
+  tab_yoga:'Yoga', yg_title:'Yoga & stretching', yg_sub:'Every pose has 3 depths. Pick yours; the app remembers it.',
+  yg_week:'Stretching this week', yg_week_note:'A few short sessions a week help mobility, ring skills and recovery.',
+  yg_sessions:'Sessions', yg_n_poses:'{0} poses', yg_profile:'Your flexibility', yg_profile_note:'Average depth level of the poses for each area (from your saved levels).',
+  yg_poses:'Pose library', yg_bothsides:'both sides', yg_sides:'sides', yg_yours:'Your level', yg_pick:'Use this level',
+  yg_safety:'Stretch to a mild pull, never to sharp pain. Breathe slowly and do not bounce.',
+  yg_level_note:'levels can be changed during the session', yg_start:'Start session', yg_side1:'first side', yg_side2:'second side',
+  yg_pause:'Pause', yg_resume:'Resume', yg_how:'How did "{0}" feel?', yg_hard:'Too tight', yg_ok:'Just right', yg_easy:'Easy',
+  yg_up:'Next time: {0}', yg_down:'Stepped down to: {0}', yg_easy_once:'Noted. One more easy time and this pose levels up.',
+  yg_quit:'End the session now?', yg_done:'Session done', yg_poses_done:'poses',
+  yv_switch:'Switch sides', yv_next:'Next: {0}',
+  rv_yoga:'Stretching & yoga', rv_yoga_n:'{0} minutes in the last 7 days',
+  in_stretch:'No stretching this week yet. Try the "After training" session (8 min).'
+});
+Object.assign(STR.th, {
+  tab_yoga:'โยคะ', yg_title:'โยคะ & ยืดเหยียด', yg_sub:'ทุกท่ามี 3 ระดับความลึก เลือกระดับของคุณ แอปจะจำไว้',
+  yg_week:'ยืดเหยียดสัปดาห์นี้', yg_week_note:'ยืดสั้นๆ ไม่กี่ครั้งต่อสัปดาห์ ช่วยเรื่องความยืดหยุ่น ท่าห่วง และการฟื้นตัว',
+  yg_sessions:'เซสชัน', yg_n_poses:'{0} ท่า', yg_profile:'ความยืดหยุ่นของคุณ', yg_profile_note:'ระดับความลึกเฉลี่ยของท่าในแต่ละส่วน (จากระดับที่คุณบันทึกไว้)',
+  yg_poses:'คลังท่า', yg_bothsides:'ทั้งสองข้าง', yg_sides:'ข้าง', yg_yours:'ระดับของคุณ', yg_pick:'ใช้ระดับนี้',
+  yg_safety:'ยืดแค่รู้สึกตึงพอดี ไม่ถึงขั้นเจ็บแหลม หายใจช้าๆ และไม่เด้งตัว',
+  yg_level_note:'เปลี่ยนระดับได้ระหว่างทำ', yg_start:'เริ่มเซสชัน', yg_side1:'ข้างแรก', yg_side2:'ข้างที่สอง',
+  yg_pause:'หยุดชั่วคราว', yg_resume:'ทำต่อ', yg_how:'ท่า "{0}" เป็นยังไง?', yg_hard:'ตึงไป', yg_ok:'พอดี', yg_easy:'ง่าย',
+  yg_up:'ครั้งหน้า: {0}', yg_down:'ลดระดับเป็น: {0}', yg_easy_once:'รับทราบ ถ้าง่ายอีกครั้ง ท่านี้จะขึ้นระดับ',
+  yg_quit:'จบเซสชันตอนนี้?', yg_done:'เซสชันเสร็จแล้ว', yg_poses_done:'ท่า',
+  yv_switch:'สลับข้าง', yv_next:'ท่าต่อไป {0}',
+  rv_yoga:'ยืดเหยียด & โยคะ', rv_yoga_n:'{0} นาทีใน 7 วันล่าสุด',
+  in_stretch:'สัปดาห์นี้ยังไม่ได้ยืดเลย ลองเซสชัน "หลังซ้อม" (8 นาที)'
+});
