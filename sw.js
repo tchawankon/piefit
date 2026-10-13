@@ -1,6 +1,6 @@
 // PieFit service worker: caches the app shell so it works offline.
 // Serves from cache first, refreshes the cache in the background (bump VERSION to force an update).
-const VERSION = 'piefit-v10';
+const VERSION = 'piefit-v11';
 const FILES = ['./', './index.html', './app.js', './data.js', './i18n.js', './sound.js', './native.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
