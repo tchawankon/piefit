@@ -279,12 +279,16 @@ const Yoga = (() => {
         <div class="grid2" style="margin-bottom:10px">${SESS.filter(s => s.group === g).map(tile).join('')}</div>`).join('')}
       <h2>🧘 ${t('yg_yoga')}</h2>
       ${[1, 2, 3].map(lv => `<div class="lbl-sm">${t('lvl_' + lv)}</div><div class="grid2">${SESS.filter(s => s.group === 'yoga' && s.lvl === lv).map(tile).join('')}</div>`).join('')}
+      <h2>▶ ${t('yv_title')}</h2><p class="sub">${t('yv_sub')}</p>
+      <div class="grid2">${YT_CATS.map(([c, icon]) => `<div class="card sess tile" data-yvc="${c}"><div class="emoji">${icon}</div><b>${t('yvc_' + c)}</b>
+        <small>${t('yv_n', (YT_SESS[c] || []).length)}</small></div>`).join('')}</div>
       <h2>${t('yg_profile')}</h2><div class="card"><small>${t('yg_profile_note')}</small>
         ${areas.map(a => `<div class="bar-row"><span class="lbl">${L(AREA[a])}</span><div class="track"><div class="fill" style="width:${Math.round(areaLvl(a) / 3 * 100)}%"></div></div><span class="n">${areaLvl(a).toFixed(1)}/3</span></div>`).join('')}</div>
       <h2>${t('yg_poses')}</h2>${segHTML('ylib', [['stretch', t('yg_lib_stretch')], ['yoga', t('yg_lib_yoga')]], view.lib || 'stretch')}
       ${Object.keys(POSES).filter(id => id !== 'savasana' && ((view.lib || 'stretch') === 'yoga' ? !POSES[id].kind : !!POSES[id].kind)).map(id => `<div class="card sess item" data-yp="${id}"><div class="row"><div class="grow"><b>${L(POSES[id].n)}</b><br>
         <small>${POSES[id].a.map(a => L(AREA[a])).join(' · ')}${POSES[id].side ? ' · ' + t('yg_bothsides') : ''}</small></div><span class="tag">${'●'.repeat(lvlOf(id))}${'○'.repeat(3 - lvlOf(id))}</span></div></div>`).join('')}`;
     on('[data-ys]', el => go('yoga', {name:'ysess', id:el.dataset.ys}));
+    on('[data-yvc]', el => go('yoga', {name:'yvids', cat:el.dataset.yvc}));
     on('[data-yp]', el => go('yoga', {name:'ypose', id:el.dataset.yp}));
     on('[data-ylib]', el => { view.lib = el.dataset.ylib; render(); });
   }
@@ -312,9 +316,35 @@ const Yoga = (() => {
       s.poses.map(([id, sec], i) => { const p = POSES[id], lv = lvlOf(id);
         return `<div class="card item"><div class="row"><span class="num">${i + 1}</span><div class="grow"><b>${L(p.n)}</b><br>
           <small>${sec}s${p.side ? ' × 2 ' + t('yg_sides') : ''} · ${L(p.lv[lv - 1].n)}</small></div><span class="tag">${'●'.repeat(lv)}${'○'.repeat(3 - lv)}</span></div></div>`; }).join('') +
+      (SESS_CAT[s.id] && YT_SESS[SESS_CAT[s.id]] ? `<h2>📺 ${t('yv_or')}</h2>` + YT_SESS[SESS_CAT[s.id]].slice(0, 3).map(vidCard).join('') +
+        `<button class="chip" data-yvc="${SESS_CAT[s.id]}">${t('yv_more', t('yvc_' + SESS_CAT[s.id]))} →</button><div style="height:70px"></div>` : '') +
       `<button class="btn sticky" id="ygo">▶ ${t('yg_start')}</button>`;
     $('#back').onclick = () => go('yoga');
+    on('[data-yvc]', el => go('yoga', {name:'yvids', cat:el.dataset.yvc}));
+    vidDone();
     $('#ygo').onclick = () => start(s, () => go('yoga'));
+  }
+  // ---- full follow-along YouTube classes (data in videos.js)
+  const SESS_CAT = {morning:'morning', bed:'bed', hips:'hips', shoulders:'neck', full:'flex', deep:'yin', post_full:'post', post_upper:'post', post_lower:'post'};
+  const fmtViews = n => n >= 1e6 ? t('yv_views_m', (n / 1e6).toFixed(n >= 1e7 ? 0 : 1)) : t('yv_views_k', Math.max(1, Math.round(n / 1e3)));
+  const vidCard = ([id, title, ch, sec, views]) => `<div class="card"><div class="ytbox" data-yt="${id}"><button class="ytplay ythumb" aria-label="${t('yt_play')}">
+      <img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()"><span class="ytbtn">▶</span></button></div>
+    <b style="display:block;margin-top:8px">${esc(title)}</b>
+    <small>${esc(ch)} · ⏱ ${Math.round(sec / 60)} ${t('minutes')}${views ? ' · 👁 ' + fmtViews(views) : ''}</small>
+    <button class="btn ghost small" data-ydone="${id}" data-min="${Math.round(sec / 60)}" style="margin-top:8px">✓ ${t('yv_done', Math.round(sec / 60))}</button></div>`;
+  // "I did it" counts the class minutes toward the weekly yoga total
+  function vidDone(){
+    on('[data-ydone]', el => {
+      YLOG.push({id:newId(), t:Date.now(), sess:'yt:' + el.dataset.ydone, min:+el.dataset.min, poses:[]}); save();
+      el.disabled = true; el.textContent = '✓ ' + t('yv_logged'); toast(t('yv_logged'));
+    });
+  }
+  function vidsView(){
+    const c = view.cat, list = YT_SESS[c] || [], icon = (YT_CATS.find(x => x[0] === c) || [])[1] || '▶';
+    app.innerHTML = `<button class="chip" id="back">← ${t('back')}</button><h1>${icon} ${t('yvc_' + c)}</h1>
+      <p class="sub">${t('yv_list_note')}</p>${list.map(vidCard).join('')}<small class="note">${t('yg_safety')}</small>`;
+    $('#back').onclick = () => go('yoga');
+    vidDone();
   }
   // build the step list: one step per side
   function steps(poses){ const out = []; poses.forEach(([id, sec]) => { if(POSES[id].side){ out.push({id, sec, side:1}, {id, sec, side:2}); } else out.push({id, sec, side:0}); }); return out; }
@@ -426,5 +456,5 @@ const Yoga = (() => {
   }
   function clear(){ YLOG = []; YLVL = {}; YFEEL = {}; save(); }
   function summary(){ return `${minutesSince(Date.now() - 7*DAY)} min this week; pose levels: ` + (Object.entries(YLVL).map(([k, v]) => k + ' ' + v + '/3').join(', ') || 'defaults'); }
-  return {load, save, POSES, SESS, preFor, postFor, start, homeView, poseView, sessView, runView, sumView, minutesSince, exportState, importState, clear, summary};
+  return {load, save, POSES, SESS, preFor, postFor, start, homeView, poseView, sessView, vidsView, runView, sumView, minutesSince, exportState, importState, clear, summary};
 })();

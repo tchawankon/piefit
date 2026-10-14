@@ -260,3 +260,19 @@ Object.assign(STR.th, {an_start:'ท่าเริ่ม', an_move:'กำล�
 // ---- YouTube tutorial clips
 Object.assign(STR.en, {yt_title:'Video tutorial', yt_play:'Play video (needs internet)', yt_offline:'You are offline. Videos need internet.', video:'More videos on YouTube'});
 Object.assign(STR.th, {yt_title:'คลิปสอน', yt_play:'เล่นคลิป (ต้องใช้เน็ต)', yt_offline:'ออฟไลน์อยู่ คลิปต้องใช้อินเทอร์เน็ต', video:'ดูคลิปอื่นบน YouTube'});
+
+// ---- full follow-along yoga classes on YouTube
+Object.assign(STR.en, {
+  yv_title:'Follow-along video classes', yv_sub:'Full classes from popular YouTube teachers, sorted by views. Tap to play (needs internet).',
+  yv_n:'{0} classes', yv_or:'Or follow a full video class', yv_more:'More {0} classes', yv_list_note:'Most-viewed first. Mark a class done to count its minutes in your weekly yoga time.',
+  yv_done:'I did it (+{0} min)', yv_logged:'Added to your yoga minutes', yv_views_m:'{0}M views', yv_views_k:'{0}K views',
+  yvc_begin:'Beginners', yvc_morning:'Morning', yvc_bed:'Bedtime', yvc_post:'After training', yvc_hips:'Hips', yvc_back:'Lower back',
+  yvc_neck:'Neck & shoulders', yvc_flex:'Full-body flexibility', yvc_yin:'Yin (long holds)', yvc_power:'Power yoga', yvc_core:'Core', yvc_desk:'Desk / sitting'
+});
+Object.assign(STR.th, {
+  yv_title:'คลิปโยคะทำตามทั้ง session', yv_sub:'คลาสเต็มจากครูโยคะยอดนิยมบน YouTube เรียงตามยอดวิว กดเล่นได้เลย (ต้องใช้เน็ต)',
+  yv_n:'{0} คลิป', yv_or:'หรือทำตามคลิปแบบเต็ม session', yv_more:'ดูคลิป{0}เพิ่ม', yv_list_note:'เรียงจากยอดวิวมากสุด กด "ทำจบแล้ว" เพื่อนับนาทีเข้าเวลาโยคะประจำสัปดาห์',
+  yv_done:'ทำจบแล้ว (+{0} นาที)', yv_logged:'บันทึกเวลาโยคะแล้ว', yv_views_m:'{0} ล้านวิว', yv_views_k:'{0} พันวิว',
+  yvc_begin:'ผู้เริ่มต้น', yvc_morning:'ตอนเช้า', yvc_bed:'ก่อนนอน', yvc_post:'หลังออกกำลัง', yvc_hips:'สะโพก', yvc_back:'หลังล่าง / ปวดหลัง',
+  yvc_neck:'คอ บ่า ไหล่', yvc_flex:'ยืดทั้งตัว', yvc_yin:'หยินโยคะ (ค้างนาน)', yvc_power:'พาวเวอร์โยคะ', yvc_core:'แกนกลางลำตัว', yvc_desk:'คนนั่งทำงาน'
+});

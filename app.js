@@ -522,7 +522,7 @@ function render(){
   nav.querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.tab));
   const V = {session:sessionView, run:runView, summary:summaryView, onboard:onboardView, detail:detailView,
     paths:pathsView, guide:guideView, settings:settingsView, routine:Coach.routineView, plan:Coach.planView, profile:Coach.profileView, coach:Coach.AI.view,
-    ysess:Yoga.sessView, ypose:Yoga.poseView, yrun:Yoga.runView, ysum:Yoga.sumView};
+    ysess:Yoga.sessView, yvids:Yoga.vidsView, ypose:Yoga.poseView, yrun:Yoga.runView, ysum:Yoga.sumView};
   if(view.name === 'home') ({home:homeView, lib:libView, yoga:Yoga.homeView, prog:progView, more:moreView})[tab]();
   else V[view.name]();
 }

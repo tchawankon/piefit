@@ -126,3 +126,101 @@ const VIDEOS = {
   savasana:["FCjmosfNevo","Master Savasana: The Most IMPORTANT Pose in Yoga","SarahBethYoga"],
   bardip:["XqBuu8Qp4mA","CALISTHENICS: How To Do PARALLEL BAR DIPS! [TUTORIAL]","strengthOVERsize"],
 };
+// ---- full yoga classes to follow along: category -> [videoId, title, channel, seconds, views] (views fetched 2026-10-14)
+const YT_CATS = [["begin","🌱"],["morning","☀️"],["bed","🌙"],["post","💪"],["hips","🦋"],["back","🪵"],["neck","🙆"],["flex","🤸"],["yin","🌊"],["power","🔥"],["core","🎯"],["desk","💺"]];
+const YT_SESS = {
+  begin:[
+    ["v7AYKMP6rOE","Yoga For Complete Beginners - 20 Minute Home Yoga Workout!","Yoga With Adriene",1425,55843064],
+    ["0o0kNeOyH98","Yoga for Complete Beginners - Yoga Class (20 Minutes)","Yoga Practice Videos - Yoga Vidya",1202,26745788],
+    ["pWobp3phsEU","Yoga For Beginners - The Basics - Yoga With Adriene","Yoga With Adriene",2514,4002415],
+    ["yYTFV6qL0Tk","Yoga For Beginners At Home (Weight Loss And Flexibility) 20 min","Fightmaster Yoga",1285,126080]
+  ],
+  morning:[
+    ["r7xsYgTeM2Q","Sunrise Yoga | 15-Minute Morning Yoga Practice","Yoga With Adriene",934,19038201],
+    ["4C-gxOE0j7s","5-Minute Morning Yoga","Yoga With Adriene",350,11331706],
+    ["GnHTeHAZQhM","Morning Yoga for Beginners - Gentle Morning Yoga - Yoga With Adriene","Yoga With Adriene",1310,5676017],
+    ["jsLAc-2y0bE","Gentle Yoga - 25 Minute Morning Yoga Sequence - Yoga With Adriene","Yoga With Adriene",1553,4729056],
+    ["wRAtVLgj-wU","10 Minute Morning Yoga For Beginners Full Body Stretch","Yoga With Bird",609,2728407],
+    ["GCIZtxfAfsY","10 min Morning Yoga Flexibility Flow - Yoga with Kassandra","Yoga with Kassandra",822,1797725]
+  ],
+  bed:[
+    ["BiWDsfZ3zbo","Wind Down Yoga | 12-Minute Bedtime Yoga","Yoga With Adriene",723,10635322],
+    ["SqFniT-Oyt8","5 Minute Yoga for Sleep (Bedtime Yoga for Insomnia)","Yoga With Bird",374,2283202],
+    ["QKqnhbrV6ms","10 minute Bedtime Yoga IN BED | Relaxing Bedtime Yoga Routine","SarahBethYoga",582,1739507],
+    ["fvv5PLI0Ut0","8 min Bedtime Yoga in Bed | Stretches to Fall Asleep","SarahBethYoga",483,502500],
+    ["gnougTneFJM","15 Min Bedtime Yoga for Relaxation and BETTER SLEEP!🌙","Yoga With Bird",936,495622],
+    ["dNtluNVlbPQ","🌙 15 Min Bedtime Yoga Stretch for Deep Sleep","Yoga With Bird",842,482650]
+  ],
+  post:[
+    ["yMNLa17g9uc","15 Min. Leg Stretch | Flexibility Routine for Hamstrings, Butt & Hips | Post Run Stretch","Mady Morrison",923,6225703],
+    ["0hTllAb4XGg","Runner's Yoga - Yoga With Adriene","Yoga With Adriene",1829,5004644],
+    ["2137wAXvufE","Yoga For Tired Legs - Yoga With Adriene","Yoga With Adriene",1618,3180198],
+    ["ssk1aBO84Lo","6-Minute Post-Workout Yoga - Yoga With Adriene","Yoga With Adriene",385,2124719],
+    ["tTZRx453Lyo","Yoga For When You're Sore (with special guest)","Yoga With Adriene",1077,1451052],
+    ["pavRUoAT1FQ","30 minute Full Body Yoga Stretch for Flexibility & SORE MUSCLES","SarahBethYoga",1775,1313438]
+  ],
+  hips:[
+    ["Ho9em79_0qg","Yoga For Hips & Lower Back Release | Yoga With Adriene","Yoga With Adriene",1400,24418217],
+    ["HzXkMnvqojE","Stretches for Lower Back Pain Relief & Tight Hips | 15 Min. Recovery and flexibility","Mady Morrison",920,10356616],
+    ["dcqW72d5JjI","Yoga For Weight Loss - Hips and Core Vinyasa - Yoga With Adriene","Yoga With Adriene",726,8955095],
+    ["JsE4csvlUfA","Yoga For Psoas | Yoga With Adriene","Yoga With Adriene",1320,4071777],
+    ["GffXQl3zvUI","Hip Mobility - Open Your Hips - 13 Min Yoga Practice","Yoga With Adriene",808,1653323],
+    ["Dw1RlLhTc5w","20 Min Yoga Stretch for Tight Hips & Lower Back Pain Release | No Repeat | Beginner Friendly","Eleni Fit",1227,1409620]
+  ],
+  back:[
+    ["2eA2Koq6pTI","Back Pain Relief Stretches | 10 min. Yoga for Relaxation & Recovery","Mady Morrison",708,24161214],
+    ["XeXz8fIZDCE","Yoga For Lower Back Pain | Yoga With Adriene","Yoga With Adriene",946,15416711],
+    ["4mUyca7LKAw","10 min Yoga for Lower Back Pain | All Levels","SarahBethYoga",598,200020],
+    ["ewffXpMbBGA","20 minute DEEP STRETCH Yoga Back & Mid Back","SarahBethYoga",1274,120903],
+    ["g86Kom6XU4Q","Yoga for Lower Back Pain Relief - Daily 10 Minute Back Stretch","Yoga With Bird",779,104681],
+    ["rcPLDqzEtDg","12 Yoga Poses to Help Relieve Lower Back Pain (Yoga Class)","YouAligned",692,93238]
+  ],
+  neck:[
+    ["X3-gKPNyrTA","Yoga For Neck, Shoulders, Upper Back | 10-Minute Yoga Quickie","Yoga With Adriene",638,30512219],
+    ["s-7lyvblFNI","Stretches for Neck, Shoulder & Upper Back Pain Relief | 10 min. Yoga to release Tension and Relax","Mady Morrison",632,23402868],
+    ["SedzswEwpPw","Yoga for Neck and Shoulder Relief - Yoga With Adriene","Yoga With Adriene",1058,18498650],
+    ["JUP_YdYyfQw","Yoga For Text Neck | Yoga With Adriene","Yoga With Adriene",1726,4033077],
+    ["d6zJkHcjbWc","Yoga For Upper Back Pain | Yoga With Adriene","Yoga With Adriene",722,3413900],
+    ["IlplXfNE45U","20 min Neck & Shoulder Yoga Release (NECK & SHOULDER STRETCHES)","Yoga with Kassandra",1413,1193794]
+  ],
+  flex:[
+    ["g_tea8ZNk5A","15 Min. Full Body Stretch | Daily Routine for Flexibility, Mobility & Relaxation | DAY 7","Mady Morrison",992,105244180],
+    ["GLy2rYHwUqY","Total Body Yoga | Deep Stretch | 45-Minute Yoga Practice","Yoga With Adriene",2713,30293758],
+    ["CY6QP4ofwx4","Full Body Stretch | Gentle Routine for Flexibility, Relaxation & Stress Relief | 30Min.Yoga inspired","Mady Morrison",1698,20277877],
+    ["Yzm3fA2HhkQ","Yoga For Flexibility | 16 Minute Practice","Yoga With Adriene",986,16006076],
+    ["SvPKFsCiMsw","10 Minute Yoga Full Body Stretch for Stiff Bodies","Yoga With Bird",617,10390247],
+    ["WnSr8w4QEWo","30 Min FLEXIBILITY + STRETCHING ROUTINE | Full Body Relaxation | Beginner Friendly, YOGA inspired","Eleni Fit",1826,8507387]
+  ],
+  yin:[
+    ["Od6kPSlKoMg","45 Min Yin Yoga Full Body l Deep Stretch & Relaxation","Travis Eliot",2862,1577894],
+    ["-Eulu9ZvYFo","30 Min Yin Yoga - Deep Full Body Stretch for Tension Release","Yoga with Kate Amber",2196,1027813],
+    ["T5v8wMYWT9c","20 min Morning Yin Yoga Full Body Stretch - NO PROPS (with Cleo!)","Yoga with Kassandra",1415,761306],
+    ["0pfbqeo19Mo","20 min Morning Yin Yoga Stretch - FULL BODY FLEXIBILITY","Yoga with Kassandra",1103,422951],
+    ["_3KXHPj4mbA","30 Min Full Body Yin Yoga | Deep Fascia Stretch","Travis Eliot",1885,79355],
+    ["LrRpHbQh-jA","The Ultimate Yin Yoga Class: 1-Hr Deep Stretch for Mind & Body {No Props}","Devi Daly Yoga",3803,66096]
+  ],
+  power:[
+    ["GuLAETCDThU","Shakti Power Flow - Yoga With Adriene","Yoga With Adriene",3403,4738864],
+    ["WwzihD_WmFE","Power Yoga - with Adriene","Yoga With Adriene",2715,4020398],
+    ["ZbtVVYBLCug","20-Minute Intermediate Power Yoga","Yoga With Adriene",1410,3939957],
+    ["6zzeSJxJS4s","30 Min Full Body Flow | Yoga To Stretch, Breathe, & Feel The Bliss","Boho Beautiful Yoga",1718,2553475],
+    ["_F8aOQza68E","Yoga for Strength and Focus","Yoga With Adriene",2594,2105359],
+    ["v3OLzsWiaL4","20 Min. Total Body Yoga | Daily Yoga Flow To Feel Your Ultimate Best ☀️","Boho Beautiful Yoga",1545,910933]
+  ],
+  core:[
+    ["BPobdbmzY9o","Total Body Yoga - 20-Minute Deep Core Yoga","Yoga With Adriene",1263,5050410],
+    ["k2Aw9vZm_0E","Core Power Wake Up | Yoga With Adriene","Yoga With Adriene",1398,2565688],
+    ["aIt-vTovNuA","15 MIN ABS + YOGA - Slow and Controlled Core Workout (No Equipment)","MadFit",996,1451867],
+    ["fXOz09pxoiM","Yoga For Abdominal Strength","Yoga With Adriene",1636,855422],
+    ["_Bla7UwiTA4","10 min Core Strength Yoga for Abs","Yoga with Kassandra",605,463724],
+    ["A3-4ivzH2Zw","Best 20 Min Yoga Workout To Tone & Define Your Core | Abs & Yoga Fusion Class ➤ Day 7","Boho Beautiful Yoga",1225,389579]
+  ],
+  desk:[
+    ["tAUf7aajBWE","Yoga at Your Desk","Yoga With Adriene",384,2537252],
+    ["M-8FvC3GD8c","Office Break Yoga | 14-Minute Yoga Practice","Yoga With Adriene",859,2072401],
+    ["s8RDWogbqh0","Yoga For Your Lunch Break","Yoga With Adriene",1179,671070],
+    ["a-sZbOfau6c","Yoga for People Who Sit All Day","Yoga With Adriene",536,465094],
+    ["m4t9nCW3630","10 Minute Chair Yoga Practice","Candace Cabrera ",614,324625],
+    ["vRQdJQ3Xhzk","Desk Exercises at Work - 10 Minute Desk Stretches For Energy, Posture and Flexibility!","Jessica Valant",493,133186]
+  ]
+};
