@@ -447,6 +447,19 @@ function howTo(id, open){
   return `<details class="card how" ${open ? 'open' : ''}><summary>${t('how_to')}</summary>
     <ul class="cues">${exText(id, 'cues').map(c => `<li>${c}</li>`).join('')}</ul>${p ? `<p class="sub">${p}</p>` : ''}</details>`;
 }
+function vidBlock(id, fold){
+  const v = typeof VIDEOS !== 'undefined' && VIDEOS[id];
+  if(!v) return '';
+  const box = `<div class="ytbox" data-yt="${v[0]}"><button class="ytplay" aria-label="${t('yt_play')}"><span class="ytbtn">▶</span><span class="ytlbl">${t('yt_play')}</span></button></div>
+    <small class="ytcap">${esc(v[1])} · ${esc(v[2])}</small>`;
+  return fold ? `<details class="card how"><summary>📺 ${t('yt_title')}</summary>${box}</details>` : `<div class="card"><b>📺 ${t('yt_title')}</b>${box}</div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ytplay'); if(!b) return;
+  const box = b.parentElement;
+  if(!navigator.onLine){ toast(t('yt_offline')); return; }
+  box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(box.dataset.yt)}?autoplay=1&rel=0&playsinline=1" title="YouTube" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+});
 function searchLink(x){
   return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(x.name + (eqOf(x) === 'rings' ? ' tutorial gymnastic rings' : ' form tutorial'));
 }
@@ -712,7 +725,7 @@ function runView(){
       <button class="btn ghost small" id="swap">⇄ ${t('swap')}</button><button class="btn ghost small" id="formck">🎥 ${t('fc_btn')}</button></div>
     <div class="row gap" style="margin-top:8px"><button class="btn ghost" id="prev" ${view.i === 0 ? 'disabled' : ''}>← ${t('prev')}</button>
       <button class="btn ${done >= N ? '' : 'ghost'}" id="next">${view.i === view.list.length - 1 ? t('finish') : t('next') + ' →'}</button></div>
-    <div style="height:14px"></div>${warnBlock(id)}${howTo(id, first)}${view.cal ? '' : goalBlock(id)}`;
+    <div style="height:14px"></div>${warnBlock(id)}${howTo(id, first)}${vidBlock(id, true)}${view.cal ? '' : goalBlock(id)}`;
   startAnim(document.getElementById('figure'), x.anim, {areas:x.p});
   if(!view.cal && !view.rest && view.annI !== view.i){ view.annI = view.i; Sound.say(tv('v_this_ex', x.name, planVoice(view.i))); }
   if(view.rest && !document.querySelector('.restm')){ const r = view.rest; startRest(0, r.cue, r.cueVoice, r.next, r.end); }
@@ -942,7 +955,7 @@ function detailView(){
   app.innerHTML = `<button class="chip" id="back">← ${t('back')}</button><h1>${x.name}</h1>
     <div class="row wrap"><span class="tag">${t('eq_' + eqOf(x))}</span><span class="tag">${t('lvl_' + x.lvl)}</span><span class="tag">${x.rx}</span></div>
     ${musclesChips(x)}<div style="height:10px"></div>${guideBlock(id, 'figure')}
-    ${howTo(id, true)}${warnBlock(id)}${goalBlock(id)}${ladderFor(id)}
+    ${howTo(id, true)}${vidBlock(id)}${warnBlock(id)}${goalBlock(id)}${ladderFor(id)}
     <div class="card"><b>${t('your_history')}</b>
       ${cal ? `<br><small>🧪 ${t('baseline')}: ${fmtSet(x, cal.reps, cal.w)} (${new Date(cal.t).toLocaleDateString()})</small>` : ''}
       ${days.length ? days.map(d => `<div class="setrow"><small class="grow">${new Date(d.t).toLocaleDateString()}</small><small>${d.sets.map(l => fmtSet(x, l.reps, l.w)).join(' · ')}</small></div>`).join('') : `<br><small>${t('no_history')}</small>`}

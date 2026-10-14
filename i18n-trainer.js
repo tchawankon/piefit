@@ -256,3 +256,7 @@ Object.assign(STR.th, {
 // ---- animation phase labels
 Object.assign(STR.en, {an_start:'Start', an_move:'Moving…', an_hold:'End position', fig_note:'Side view. Faded limbs are the far side, the glow shows the target area and the dashed figure is the start position. Use ⏸ and the slider to look step by step.'});
 Object.assign(STR.th, {an_start:'ท่าเริ่ม', an_move:'กำลังเคลื่อนไหว…', an_hold:'ท่าจบ / ค้าง', fig_note:'มุมข้าง แขนขาสีจางคือข้างไกล ส่วนที่เรืองแสงคือจุดที่ออกแรงหรือยืด และหุ่นเส้นประคือท่าเริ่ม กด ⏸ หรือเลื่อนแถบเพื่อดูทีละจังหวะ'});
+
+// ---- YouTube tutorial clips
+Object.assign(STR.en, {yt_title:'Video tutorial', yt_play:'Play video (needs internet)', yt_offline:'You are offline. Videos need internet.', video:'More videos on YouTube'});
+Object.assign(STR.th, {yt_title:'คลิปสอน', yt_play:'เล่นคลิป (ต้องใช้เน็ต)', yt_offline:'ออฟไลน์อยู่ คลิปต้องใช้อินเทอร์เน็ต', video:'ดูคลิปอื่นบน YouTube'});
