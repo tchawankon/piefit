@@ -225,7 +225,7 @@ const YT_SESS = {
   ]
 };
 // ---- video workout classes (non-yoga): category -> [videoId, title, channel, seconds, views] (views fetched 2026-10-20)
-const CLASS_CATS = [["combat","🥊"],["zumba","💃"],["dance","🕺"],["kick","🦵"],["hiit","⚡"],["body","🏠"],["walk","🚶"],["dumb","🏋️"],["pilates","🧘‍♀️"],["rope","🪢"]];
+const CLASS_CATS = [["combat","🥊"],["pump","💪"],["zumba","💃"],["dance","🕺"],["kick","🦵"],["hiit","⚡"],["body","🏠"],["walk","🚶"],["dumb","🏋️"],["pilates","🧘‍♀️"],["rope","🪢"]];
 const CLASS_VIDS = {
   combat:[
     ["xbABGepKT2o","This Workout Feels Like a 12 Round Fight (BODYCOMBAT)","Les Mills",2669,19745068],
@@ -233,15 +233,29 @@ const CLASS_VIDS = {
     ["HPytZF6SZ98","Smash Stress With This 30 Min KICKBOXING Workout AT HOME | BODYCOMBAT","Les Mills",2092,3604163],
     ["pGF6YZ3zAIA","Train Your ENTIRE Body With THESE Simple Moves (BODYCOMBAT)","Les Mills",1971,3433862],
     ["dAcvgYI_i-k","THIS 20 Minute BODYCOMBAT Class is the Ultimate BOXING Exercise | Workout #9","Les Mills",1108,1042838],
-    ["rqJpSSL0kB8","13 Minute BODYPUMP Workout | Les Mills & adidas","adidas",755,821936]
+    ["oBxYddiCq3Y","30 Minute Body Combat Beginner Workout | Step Workout","Get Fit With Rick",1933,561746],
+    ["-gSZx-ELwa8","Skip the Treadmill - Do 10 Minutes of Combat Workout Instead","Les Mills",608,86126],
+    ["t4_bF690yEs","LES MILLS BODYCOMBAT - ​55 Minute Full Body Cardio Workout | Les Mills BodyCombat","Ilovesony10",3314,489]
+  ],
+  pump:[
+    ["rqJpSSL0kB8","13 Minute BODYPUMP Workout | Les Mills & adidas","adidas",755,821938],
+    ["rmKGUCxvkpQ","55 Min FULL BODY STRENGTH Workout At Home | BODYPUMP","Les Mills",3235,316638],
+    ["ZX3jK78zJM0","Get FIT with Natalie's Expert 30-Minute Full-Body PUMP Workout","Nuffield Health",1804,203691],
+    ["AlheUtNhx1s","PUMP and Strength with Natalie | Full Body Dumbbell workout","Nuffield Health",1838,148649],
+    ["hmfDcOpHqpQ","Do THIS Full Body Workout in ONLY 10 Minutes","Les Mills",631,81696],
+    ["L7G3eIKBxvI","40 Min Full Body Barbell Workout at Home","Penny Barnshaw - Garage Fitness Girl",2542,59565],
+    ["ow3eBiSdLpI","30 MIN FULL BODY BARBELL and DUMBBELL WORKOUT | Follow Along","Tom Peto Training",1865,59403],
+    ["7_r_8iaT2qU","60 Min Functional BARBELL Workout That Tests STRENGTH & ENDURANCE | BODYPUMP","Les Mills",3251,57181]
   ],
   zumba:[
     ["mZeFvX3ALKY","Zumba® 30-Minute Beginners Latin Dance Mini-Workout","Zumba",1783,24750101],
     ["qAJ6EQtGZ28","30 Minutes Zumba Dance Workout - Full video","OneHowto",1616,7708257],
+    ["Dg4JZALhPWw","FULL BODY - BURN 600 CALORIES with This 60-Minute AEROBIC WORKOUT | Zumba Class","Zumba Class",3411,1212642],
     ["lnaEqAZygdY","Zumba® 15 minute workout with Professional Dancer Giovanni Pernice","Zumba",884,911180],
     ["yWOPnVceX-0","30 Minute Dance Workout At Home | Exercise To Lose Weight FAST | Zumba Class","Zumba Class",1973,518269],
     ["HnqICUSq_JE","Zumba Dance Workout - Best Zumba Dance","Fitness channel on YouTube",1440,412378],
-    ["qOE8hSlxc8I","Dance Workout | Zumba-Inspired Latin Workout at Home (25 Minute)","Zumba Sulu",1544,396781]
+    ["qOE8hSlxc8I","Dance Workout | Zumba-Inspired Latin Workout at Home (25 Minute)","Zumba Sulu",1544,396781],
+    ["hYy8zFHsKgY","20 Minute Dance Workout At Home | Exercise To Lose Weight FAST | Zumba Class","Zumba Class",1124,318761]
   ],
   dance:[
     ["1vRto-2MMZo","15 MIN DANCE PARTY WORKOUT - Full Body/No Equipment","MadFit",939,33142738],
@@ -252,12 +266,14 @@ const CLASS_VIDS = {
     ["_Ed-SYBvDLU","SUMMER DANCE WORKOUT | CARDIO DANCE | 15 MINUTES","Tara's body",1073,352071]
   ],
   kick:[
+    ["jOaartzSX6A","Billy Blanks Tae Bo® Workout","Billy Blanks ®",3369,9464534],
+    ["Q2E3BoClidQ","Billy Blanks Tae Bo® Ab Burner!","Billy Blanks ®",678,4867290],
     ["v8jQKMQT06g","Tae Bo FULL Workout Advanced 30 minute with Billy Blanks!","Billy Blanks ®",1717,2763303],
+    ["GMQ1063xrVQ","Billy Blanks Tae Bo® Extreme Workout Special!","Billy Blanks ®",1781,1718613],
     ["bmVXD9_WprY","60 Minute Fighter Follow Along Workout (At-Home Solo Muay Thai Workout)","Sean \"Muay Thai Guy\" Fagan",3595,663694],
     ["F33KXCI-YCY","25-Minute High Intensity Cardio Kickboxing Workout (No Equipment!) 🥊 🔥","nourishmovelove",1601,236974],
     ["bz3Bv1y-mYo","Shadow Boxing Workout | Follow Along","El Yuyu",748,198381],
-    ["HLPU9Qk7ZVw","Follow along 30 Minute Shadow Boxing Workout","NateBowerFitness",1812,123449],
-    ["Afx2GWGY5Oc","45 MIN FUN! CARDIO KICKBOXING HIIT WORKOUT + Bonus Booty & Abs","HealthyFit with Ty",2848,116277]
+    ["azy1d9Hw8UE","Tae Bo II Get Ripped 8 Minute Workout by Billy Blanks","Fitness",1082,177235]
   ],
   hiit:[
     ["cCsQXGvxnDU","20 Minute Full Body Tabata Workout [Strength , HIIT, & Cardio/ No Equipment]","Juice & Toya",1658,539368],
