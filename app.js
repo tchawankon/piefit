@@ -573,7 +573,7 @@ function homeView(){
       : plan && !plan.next ? `<div class="card hl"><b>🎉 ${t('pl_week_done')}</b></div>` : ''}
     ${Coach.deloadOn() ? `<div class="card warn row"><div class="grow">🛌 ${t('dl_on', new Date(Coach.prof.deloadUntil).toLocaleDateString())}</div><button class="chip" id="dloff">${t('dl_stop')}</button></div>`
       : dl ? `<div class="card warn"><b>🛌 ${t('dl_title')}</b><br><small>${dl}</small><button class="btn ghost small" id="dlon" style="margin-top:8px">${t('dl_start')}</button></div>` : ''}
-    <div class="row gap" style="margin-bottom:10px"><button class="btn ghost small" data-stq="pre_full">🔥 ${t('rt_warm')}</button><button class="btn ghost small" data-stq="post_full">🧊 ${t('rt_cool')}</button></div>
+    <div class="row gap" style="margin-bottom:10px"><button class="btn ghost small" data-stq="pre_full">🔥 ${t('rt_warm')}</button><button class="btn ghost small" data-stq="post_full">🧊 ${t('rt_cool')}</button><button class="btn ghost small" id="clsgo">🎬 ${t('cv_short')}</button></div>
     <div class="lbl-sm">${t('ob_where')}</div>${venueSeg()}
     ${best && !(plan && plan.next && !plan.trainedToday && (plan.trainDay || plan.missed)) ? `<div class="card ${plan ? '' : 'hero'} sess" data-s="${best.id}"><small>${t('suggest_today')}</small>
       <div class="row"><div class="emoji">${best.icon}</div><div class="grow"><h2 style="margin:0">${sessionName(best.id)}</h2><small>${reason}</small></div><span class="go">›</span></div></div>` : ''}
@@ -600,6 +600,7 @@ function homeView(){
   if($('#dloff')) $('#dloff').onclick = () => { Coach.stopDeload(); render(); };
   if($('#askai')) $('#askai').onclick = () => go('more', {name:'coach'});
   on('[data-stq]', el => go('yoga', {name:'ysess', id:el.dataset.stq}));
+  if($('#clsgo')) $('#clsgo').onclick = () => go('yoga', {name:'home', jump:'cls'});
   $('#moretips').onclick = () => { progSub = 'review'; go('prog'); };
   if($('#resume')) $('#resume').onclick = () => { Native.prepare(); if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
   if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };

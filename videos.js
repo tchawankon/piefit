@@ -224,3 +224,86 @@ const YT_SESS = {
     ["vRQdJQ3Xhzk","Desk Exercises at Work - 10 Minute Desk Stretches For Energy, Posture and Flexibility!","Jessica Valant",493,133186]
   ]
 };
+// ---- video workout classes (non-yoga): category -> [videoId, title, channel, seconds, views] (views fetched 2026-10-20)
+const CLASS_CATS = [["combat","🥊"],["zumba","💃"],["dance","🕺"],["kick","🦵"],["hiit","⚡"],["body","🏠"],["walk","🚶"],["dumb","🏋️"],["pilates","🧘‍♀️"],["rope","🪢"]];
+const CLASS_VIDS = {
+  combat:[
+    ["xbABGepKT2o","This Workout Feels Like a 12 Round Fight (BODYCOMBAT)","Les Mills",2669,19745068],
+    ["9BnVP3Eg_KQ","Fast, Fierce 30 Min HIIT WORKOUT At Home | LES MILLS GRIT","Les Mills",1801,3872527],
+    ["HPytZF6SZ98","Smash Stress With This 30 Min KICKBOXING Workout AT HOME | BODYCOMBAT","Les Mills",2092,3604163],
+    ["pGF6YZ3zAIA","Train Your ENTIRE Body With THESE Simple Moves (BODYCOMBAT)","Les Mills",1971,3433862],
+    ["dAcvgYI_i-k","THIS 20 Minute BODYCOMBAT Class is the Ultimate BOXING Exercise | Workout #9","Les Mills",1108,1042838],
+    ["rqJpSSL0kB8","13 Minute BODYPUMP Workout | Les Mills & adidas","adidas",755,821936]
+  ],
+  zumba:[
+    ["mZeFvX3ALKY","Zumba® 30-Minute Beginners Latin Dance Mini-Workout","Zumba",1783,24750101],
+    ["qAJ6EQtGZ28","30 Minutes Zumba Dance Workout - Full video","OneHowto",1616,7708257],
+    ["lnaEqAZygdY","Zumba® 15 minute workout with Professional Dancer Giovanni Pernice","Zumba",884,911180],
+    ["yWOPnVceX-0","30 Minute Dance Workout At Home | Exercise To Lose Weight FAST | Zumba Class","Zumba Class",1973,518269],
+    ["HnqICUSq_JE","Zumba Dance Workout - Best Zumba Dance","Fitness channel on YouTube",1440,412378],
+    ["qOE8hSlxc8I","Dance Workout | Zumba-Inspired Latin Workout at Home (25 Minute)","Zumba Sulu",1544,396781]
+  ],
+  dance:[
+    ["1vRto-2MMZo","15 MIN DANCE PARTY WORKOUT - Full Body/No Equipment","MadFit",939,33142738],
+    ["OVys9s4Q4TY","20 MIN 80's DANCE PARTY WORKOUT - Full Body/No Equipment","MadFit",1219,3305118],
+    ["99_tscMPyZQ","FREE 30 Minute Sweat Session | The Fitness Marshall + Canon","The Fitness Marshall",1925,2198698],
+    ["ZMMvR57l_zc","Do This Every Morning 20 min (low impact) full-body dance workout","growwithjo",1305,1277147],
+    ["uyWYzKgUgLI","20 MIN Feel Good Cardio Dance Workout | FRESH START","growwithjo",1267,1256372],
+    ["_Ed-SYBvDLU","SUMMER DANCE WORKOUT | CARDIO DANCE | 15 MINUTES","Tara's body",1073,352071]
+  ],
+  kick:[
+    ["v8jQKMQT06g","Tae Bo FULL Workout Advanced 30 minute with Billy Blanks!","Billy Blanks ®",1717,2763303],
+    ["bmVXD9_WprY","60 Minute Fighter Follow Along Workout (At-Home Solo Muay Thai Workout)","Sean \"Muay Thai Guy\" Fagan",3595,663694],
+    ["F33KXCI-YCY","25-Minute High Intensity Cardio Kickboxing Workout (No Equipment!) 🥊 🔥","nourishmovelove",1601,236974],
+    ["bz3Bv1y-mYo","Shadow Boxing Workout | Follow Along","El Yuyu",748,198381],
+    ["HLPU9Qk7ZVw","Follow along 30 Minute Shadow Boxing Workout","NateBowerFitness",1812,123449],
+    ["Afx2GWGY5Oc","45 MIN FUN! CARDIO KICKBOXING HIIT WORKOUT + Bonus Booty & Abs","HealthyFit with Ty",2848,116277]
+  ],
+  hiit:[
+    ["cCsQXGvxnDU","20 Minute Full Body Tabata Workout [Strength , HIIT, & Cardio/ No Equipment]","Juice & Toya",1658,539368],
+    ["mVlRIWksyDg","10 MIN FULL BODY HIIT - No Equipment, At Home Workout","MadFit",738,478993],
+    ["BOdn71OWJlM","20 Minute Full Body TABATA HIIT Workout | INTENSE No Equipment Workout","TIFF x DAN",1495,438031],
+    ["zv8h5kJQSFY","30 Min Full Body HIIT Workout | Burn 400 Calories (No Repeat, No Equipment)","Nobadaddiction",1950,89088],
+    ["5gzQEW-Ip_Y","40 MIN CARDIO HIIT WORKOUT - Full Body, No Equipment, No Repeats","TIFF x DAN",2483,76177],
+    ["uL7DTmk8U9A","15 MIN CARDIO HIIT WORKOUT - ALL STANDING - Full Body, No Equipment, at Home","Nobadaddiction",947,72427]
+  ],
+  body:[
+    ["UBMk30rjy0o","20 MIN FULL BODY WORKOUT // No Equipment | Pamela Reif","Pamela Reif",1220,59346687],
+    ["Y2eOW7XYWxc","20 MIN FULL BODY WORKOUT - Intense Version / No Equipment I Pamela Reif","Pamela Reif",1297,27041916],
+    ["F8v9SA4Ptu4","15 MIN FULL BODY WORKOUT / Beginner Friendly - Let's Train Together / No Equipment I Pamela Reif","Pamela Reif",1004,8244212],
+    ["HLQ0NCN_Z4Q","15 MIN FULL BODY CARDIO - burn lots of calories / No Equipment I Pamela Reif","Pamela Reif",945,5618824],
+    ["60tyjz_EHjU","15 MIN SLOW STRENGTH, Full Body - on the floor, no standing up, low impact I Pamela Reif","Pamela Reif",938,3847593],
+    ["DkLISiTHRjU","10 MIN FULL BODY - SLOW & HARD / Floor only, Low Impact I Pamela Reif","Pamela Reif",667,3416380]
+  ],
+  walk:[
+    ["enYITYwvPAQ","FAST Walking in 30 minutes | Fitness Videos","Walk at Home",1890,180280566],
+    ["DYuw4f1c4xs","START! Walking at Home American Heart Association 3 Mile Walk","Walk at Home",2444,99751565],
+    ["Yr41_8QOTF8","Burn Body Fat 3 Mile | Leslie Sansone's Walk at Home","Walk at Home",2880,19084120],
+    ["UXS_fFeGAlc","20 Minute Super Walk! Walk at Home by Leslie Sansone","Walk at Home",1245,3589001],
+    ["0l3d_9pvBEk","Leslie Sansone - Fun Walking - Walk at Home - 2025 4K","Osman Sağlam",2114,581383],
+    ["PpLR2X8nWmA","Leslie Sansone Walk Away the Pounds Express - 3 Mile Advanced Walk (2003)","the sweatvault — home media archives",3064,153663]
+  ],
+  dumb:[
+    ["GViX8riaHX4","30 Min FULL BODY DUMBBELL WORKOUT at Home | Muscle Building","Caroline Girvan",2187,19314695],
+    ["xqVBoyKXbsA","15 Minute Full Body Dumbbell Workout [Strength and Conditioning]","Juice & Toya",1037,8361612],
+    ["mf1xQS_Zlkc","20 Minute Full Body Dumbbell Workout NO REPEAT (Strength & Conditioning)","Juice & Toya",1382,5814445],
+    ["Qwy_YdZNAM4","40 Min Full Body Dumbbell Workout at Home | Build Muscle","TIFF x DAN",2353,178072],
+    ["DXPmSkWAxnI","50 Min Full Body Dumbbell Workout at Home - Build Muscle & Strength","Oliver Sjostrom",3384,103608]
+  ],
+  pilates:[
+    ["K56Z12XNQ5c","30 MIN FULL BODY WORKOUT | At-Home Pilates","Move With Nicole",2085,15153863],
+    ["lNftFawOAUM","30 MIN FULL BODY WORKOUT || At-Home Pilates (No Equipment)","Move With Nicole",2145,4268466],
+    ["6wSbM7Oz7F0","30 MIN FULL BODY WORKOUT || Power Pilates With Weights (Moderate)","Move With Nicole",2002,3775947],
+    ["T4YKn7lubBo","Pilates Abs Workout - Tight Core & Waist - 15 min","Chloe Ting",955,1326121],
+    ["gYnUofo4ZOo","30 Min Core & Cardio Pilates Workout - Full Body Tone - No Equipment","Chloe Ting",2194,642673],
+    ["PWwlbNczyOo","30 Min. Standing Pilates Full Body Workout with Weights | Low Impact | Follow Along | No Repeats","Marie Steffen - The Art of Health",1965,530931]
+  ],
+  rope:[
+    ["tNaoARG9E8w","15 MIN JUMP ROPE HIIT (Full Body Cardio Workout)","MadFit",1129,954880],
+    ["vO8SLNZEBdI","30-Min Full Jump Rope Workout","Geraldo Alken",1942,418],
+    ["Hte2ewUeCiU","20 Minute Jump Rope Workout (Intermediate Follow Along)","Geraldo Alken",1218,371],
+    ["AFVPsLH47HM","This 15 Min Jump Rope Workout Burns","Geraldo Alken",1001,365],
+    ["xV_jQEO18lo","30 Min Jump Rope Workout That Doesn’t Feel Like Cardio","Geraldo Alken",2224,263],
+    ["rNGfUTaMzak"," Beginner Jump Rope Workout | Follow Along Cardio🔥✅️","Jennifer's Road 2 Fitness  ",408,34]
+  ]
+};

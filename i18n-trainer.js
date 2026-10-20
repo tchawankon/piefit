@@ -276,3 +276,21 @@ Object.assign(STR.th, {
   yvc_begin:'ผู้เริ่มต้น', yvc_morning:'ตอนเช้า', yvc_bed:'ก่อนนอน', yvc_post:'หลังออกกำลัง', yvc_hips:'สะโพก', yvc_back:'หลังล่าง / ปวดหลัง',
   yvc_neck:'คอ บ่า ไหล่', yvc_flex:'ยืดทั้งตัว', yvc_yin:'หยินโยคะ (ค้างนาน)', yvc_power:'พาวเวอร์โยคะ', yvc_core:'แกนกลางลำตัว', yvc_desk:'คนนั่งทำงาน'
 });
+
+// ---- video workout classes (Body Combat, Zumba, dance, HIIT ...)
+Object.assign(STR.en, {
+  cv_title:'Video workout classes', cv_sub:'Body Combat, Zumba, dance cardio, kickboxing, HIIT and more from popular YouTube channels, most viewed first.',
+  cv_week:'Class minutes this week', cv_short:'Video classes', cv_logged:'Added to your class minutes',
+  cv_list_note:'Most-viewed first. Mark a class done to count its minutes. Warm up first and stop if anything hurts.',
+  cv_safety:'High-impact classes are hard on knees and ankles. Pick the low-impact / no-jumping ones if you are new, and use shoes with grip.',
+  cvc_combat:'Body Combat / Les Mills', cvc_zumba:'Zumba / Latin dance', cvc_dance:'Dance cardio', cvc_kick:'Kickboxing / Muay Thai', cvc_hiit:'HIIT / Tabata',
+  cvc_body:'Full body (no equipment)', cvc_walk:'Walk at home', cvc_dumb:'Dumbbell strength', cvc_pilates:'Pilates', cvc_rope:'Jump rope'
+});
+Object.assign(STR.th, {
+  cv_title:'คลาสออกกำลังกายแบบวิดีโอ', cv_sub:'Body Combat, Zumba, แดนซ์คาร์ดิโอ, คิกบ็อกซิ่ง, HIIT และอื่นๆ จากช่อง YouTube ยอดนิยม เรียงตามยอดวิว',
+  cv_week:'นาทีคลาสสัปดาห์นี้', cv_short:'คลาสวิดีโอ', cv_logged:'บันทึกเวลาคลาสแล้ว',
+  cv_list_note:'เรียงจากยอดวิวมากสุด กด "ทำจบแล้ว" เพื่อนับนาที วอร์มอัพก่อนเล่น และหยุดถ้าเจ็บ',
+  cv_safety:'คลาสที่มีกระโดดหนักกับเข่าและข้อเท้า ถ้าเพิ่งเริ่มให้เลือกแบบ low impact / ไม่กระโดด และใส่รองเท้าที่กันลื่น',
+  cvc_combat:'บอดี้คอมแบต / Les Mills', cvc_zumba:'ซุมบ้า / แดนซ์ลาติน', cvc_dance:'แดนซ์คาร์ดิโอ', cvc_kick:'คิกบ็อกซิ่ง / มวยไทย', cvc_hiit:'HIIT / ทาบาตะ',
+  cvc_body:'ทั้งตัว (ไม่ใช้อุปกรณ์)', cvc_walk:'เดินในบ้าน', cvc_dumb:'เวทดัมเบล', cvc_pilates:'พิลาทิส', cvc_rope:'กระโดดเชือก'
+});

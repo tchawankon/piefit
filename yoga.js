@@ -260,7 +260,8 @@ const Yoga = (() => {
     } else YFEEL[id] = 0;
     save();
   }
-  const minutesSince = ts => Math.round(YLOG.filter(y => y.t >= ts).reduce((s, y) => s + (y.min || 0), 0));
+  const minutesSince = ts => Math.round(YLOG.filter(y => y.t >= ts && !y.cls).reduce((s, y) => s + (y.min || 0), 0));
+  const classMinutesSince = ts => Math.round(YLOG.filter(y => y.t >= ts && y.cls).reduce((s, y) => s + (y.min || 0), 0));
   const totalSec = poses => poses.reduce((s, [id, sec]) => s + sec * (POSES[id].side ? 2 : 1) + 8, 0);
 
   /* ---------- views ---------- */
@@ -282,15 +283,20 @@ const Yoga = (() => {
       <h2>▶ ${t('yv_title')}</h2><p class="sub">${t('yv_sub')}</p>
       <div class="grid2">${YT_CATS.map(([c, icon]) => `<div class="card sess tile" data-yvc="${c}"><div class="emoji">${icon}</div><b>${t('yvc_' + c)}</b>
         <small>${t('yv_n', (YT_SESS[c] || []).length)}</small></div>`).join('')}</div>
+      <h2 id="cls-sec">🎬 ${t('cv_title')}</h2><p class="sub">${t('cv_sub')}</p>
+      <div class="card"><div class="row"><b class="grow">${t('cv_week')}</b><b>${classMinutesSince(Date.now() - 7*DAY)} ${t('minutes')}</b></div></div>
+      <div class="grid2">${CLASS_CATS.map(([c, icon]) => `<div class="card sess tile" data-yvc="${c}" data-set="cls"><div class="emoji">${icon}</div><b>${t('cvc_' + c)}</b>
+        <small>${t('yv_n', (CLASS_VIDS[c] || []).length)}</small></div>`).join('')}</div>
       <h2>${t('yg_profile')}</h2><div class="card"><small>${t('yg_profile_note')}</small>
         ${areas.map(a => `<div class="bar-row"><span class="lbl">${L(AREA[a])}</span><div class="track"><div class="fill" style="width:${Math.round(areaLvl(a) / 3 * 100)}%"></div></div><span class="n">${areaLvl(a).toFixed(1)}/3</span></div>`).join('')}</div>
       <h2>${t('yg_poses')}</h2>${segHTML('ylib', [['stretch', t('yg_lib_stretch')], ['yoga', t('yg_lib_yoga')]], view.lib || 'stretch')}
       ${Object.keys(POSES).filter(id => id !== 'savasana' && ((view.lib || 'stretch') === 'yoga' ? !POSES[id].kind : !!POSES[id].kind)).map(id => `<div class="card sess item" data-yp="${id}"><div class="row"><div class="grow"><b>${L(POSES[id].n)}</b><br>
         <small>${POSES[id].a.map(a => L(AREA[a])).join(' · ')}${POSES[id].side ? ' · ' + t('yg_bothsides') : ''}</small></div><span class="tag">${'●'.repeat(lvlOf(id))}${'○'.repeat(3 - lvlOf(id))}</span></div></div>`).join('')}`;
     on('[data-ys]', el => go('yoga', {name:'ysess', id:el.dataset.ys}));
-    on('[data-yvc]', el => go('yoga', {name:'yvids', cat:el.dataset.yvc}));
+    on('[data-yvc]', el => go('yoga', {name:'yvids', cat:el.dataset.yvc, set:el.dataset.set || 'yoga'}));
     on('[data-yp]', el => go('yoga', {name:'ypose', id:el.dataset.yp}));
     on('[data-ylib]', el => { view.lib = el.dataset.ylib; render(); });
+    if(view.jump === 'cls') setTimeout(() => { const h = document.getElementById('cls-sec'); if(h) h.scrollIntoView(); }, 0);
   }
   const tile = s => `<div class="card sess tile" data-ys="${s.id}"><div class="emoji">${s.icon}</div><b>${L(s.n)}</b>
     <small>${Math.round(totalSec(s.poses) / 60)} ${t('minutes')} · ${t('yg_n_poses', s.poses.length)}</small></div>`;
@@ -327,23 +333,25 @@ const Yoga = (() => {
   // ---- full follow-along YouTube classes (data in videos.js)
   const SESS_CAT = {morning:'morning', bed:'bed', hips:'hips', shoulders:'neck', full:'flex', deep:'yin', post_full:'post', post_upper:'post', post_lower:'post'};
   const fmtViews = n => n >= 1e6 ? t('yv_views_m', (n / 1e6).toFixed(n >= 1e7 ? 0 : 1)) : t('yv_views_k', Math.max(1, Math.round(n / 1e3)));
-  const vidCard = ([id, title, ch, sec, views]) => `<div class="card"><div class="ytbox" data-yt="${id}"><button class="ytplay ythumb" aria-label="${t('yt_play')}">
+  const vidCardFor = cls => ([id, title, ch, sec, views]) => `<div class="card"><div class="ytbox" data-yt="${id}"><button class="ytplay ythumb" aria-label="${t('yt_play')}">
       <img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()"><span class="ytbtn">▶</span></button></div>
     <b style="display:block;margin-top:8px">${esc(title)}</b>
     <small>${esc(ch)} · ⏱ ${Math.round(sec / 60)} ${t('minutes')}${views ? ' · 👁 ' + fmtViews(views) : ''}</small>
-    <button class="btn ghost small" data-ydone="${id}" data-min="${Math.round(sec / 60)}" style="margin-top:8px">✓ ${t('yv_done', Math.round(sec / 60))}</button></div>`;
-  // "I did it" counts the class minutes toward the weekly yoga total
+    <button class="btn ghost small" data-ydone="${id}" data-min="${Math.round(sec / 60)}" ${cls ? 'data-cls="1"' : ''} style="margin-top:8px">✓ ${t('yv_done', Math.round(sec / 60))}</button></div>`;
+  const vidCard = vidCardFor(false), clsCard = vidCardFor(true);
+  // "I did it" counts the class minutes toward the weekly yoga total (or class total)
   function vidDone(){
     on('[data-ydone]', el => {
-      YLOG.push({id:newId(), t:Date.now(), sess:'yt:' + el.dataset.ydone, min:+el.dataset.min, poses:[]}); save();
-      el.disabled = true; el.textContent = '✓ ' + t('yv_logged'); toast(t('yv_logged'));
+      const cls = !!el.dataset.cls;
+      YLOG.push({id:newId(), t:Date.now(), sess:(cls ? 'cls:' : 'yt:') + el.dataset.ydone, min:+el.dataset.min, poses:[], ...(cls ? {cls:true} : {})}); save();
+      el.disabled = true; el.textContent = '✓ ' + t(cls ? 'cv_logged' : 'yv_logged'); toast(t(cls ? 'cv_logged' : 'yv_logged'));
     });
   }
   function vidsView(){
-    const c = view.cat, list = YT_SESS[c] || [], icon = (YT_CATS.find(x => x[0] === c) || [])[1] || '▶';
-    app.innerHTML = `<button class="chip" id="back">← ${t('back')}</button><h1>${icon} ${t('yvc_' + c)}</h1>
-      <p class="sub">${t('yv_list_note')}</p>${list.map(vidCard).join('')}<small class="note">${t('yg_safety')}</small>`;
-    $('#back').onclick = () => go('yoga');
+    const c = view.cat, cls = view.set === 'cls', list = (cls ? CLASS_VIDS : YT_SESS)[c] || [], icon = ((cls ? CLASS_CATS : YT_CATS).find(x => x[0] === c) || [])[1] || '▶';
+    app.innerHTML = `<button class="chip" id="back">← ${t('back')}</button><h1>${icon} ${t((cls ? 'cvc_' : 'yvc_') + c)}</h1>
+      <p class="sub">${t(cls ? 'cv_list_note' : 'yv_list_note')}</p>${list.map(cls ? clsCard : vidCard).join('')}<small class="note">${t(cls ? 'cv_safety' : 'yg_safety')}</small>`;
+    $('#back').onclick = () => go('yoga', cls ? {name:'home', jump:'cls'} : undefined);
     vidDone();
   }
   // build the step list: one step per side
@@ -456,5 +464,5 @@ const Yoga = (() => {
   }
   function clear(){ YLOG = []; YLVL = {}; YFEEL = {}; save(); }
   function summary(){ return `${minutesSince(Date.now() - 7*DAY)} min this week; pose levels: ` + (Object.entries(YLVL).map(([k, v]) => k + ' ' + v + '/3').join(', ') || 'defaults'); }
-  return {load, save, POSES, SESS, preFor, postFor, start, homeView, poseView, sessView, vidsView, runView, sumView, minutesSince, exportState, importState, clear, summary};
+  return {load, save, POSES, SESS, preFor, postFor, start, homeView, poseView, sessView, vidsView, runView, sumView, minutesSince, classMinutesSince, exportState, importState, clear, summary};
 })();
