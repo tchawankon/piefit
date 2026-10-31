@@ -495,7 +495,7 @@ function pickExercise(title, hint, ids, onPick){
 
 /* ================= routing ================= */
 let tab = 'home', view = {name:'home'};
-const TABS = [['home','🏠','tab_home'], ['food','🥗','tab_food'], ['lib','📚','tab_lib'], ['prog','📈','tab_prog'], ['more','☰','tab_more']];
+const TABS = [['home','🏠','tab_home'], ['food','🥗','tab_food'], ['prog','📈','tab_prog'], ['more','☰','tab_more']];
 function go(tb, v){ tab = tb; view = v || {name:'home'}; render(); window.scrollTo(0, 0); }
 let wakeLock = null;
 async function keepAwake(on){
@@ -518,7 +518,7 @@ function render(){
   const full = ['run','onboard','summary','routine','yrun','ysum'].includes(view.name);
   nav.style.display = full ? 'none' : 'flex';
   document.body.classList.toggle('nonav', full);
-  nav.innerHTML = TABS.map(([k, i, l]) => `<button class="${tab === k || (k === 'more' && tab === 'yoga') ? 'on' : ''}" data-tab="${k}"><span class="ic">${i}</span>${t(l)}</button>`).join('');
+  nav.innerHTML = TABS.map(([k, i, l]) => `<button class="${tab === k || (k === 'more' && (tab === 'yoga' || tab === 'lib')) ? 'on' : ''}" data-tab="${k}"><span class="ic">${i}</span>${t(l)}</button>`).join('');
   nav.querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.tab));
   const V = {session:sessionView, run:runView, summary:summaryView, onboard:onboardView, detail:detailView,
     paths:pathsView, guide:guideView, settings:settingsView, routine:Coach.routineView, plan:Coach.planView, profile:Coach.profileView, coach:Coach.AI.view,
@@ -1031,6 +1031,7 @@ function moreView(){
     <div class="card sess row" data-v="profile"><span class="emoji">🩹</span><div class="grow"><b>${t('pf_title')}</b><br><small>${t('pf_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="coach"><span class="emoji">🤖</span><div class="grow"><b>${t('ai_title')}</b><br><small>${Coach.AI.ready() ? t('ai_sub_on') : t('ai_sub_off')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="paths"><span class="emoji">🪜</span><div class="grow"><b>${t('paths')}</b><br><small>${t('paths_sub')}</small></div><span class="go">›</span></div>
+    <div class="card sess row" id="go_lib"><span class="emoji">📚</span><div class="grow"><b>${t('tab_lib')}</b><br><small>${SET.lang === 'th' ? 'คลังท่าฝึกทั้งหมด ค้นหาและดูวิธีทำ' : 'Browse and search every exercise'}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="guide"><span class="emoji">🌱</span><div class="grow"><b>${t('guide')}</b><br><small>${t('guide_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="settings"><span class="emoji">⚙️</span><div class="grow"><b>${t('settings')}</b><br><small>${t('settings_sub')}</small></div><span class="go">›</span></div>
     <h2>${t('backup')}</h2>
@@ -1043,6 +1044,7 @@ function moreView(){
          <div class="card"><b>🤖 ${t('apk_title')}</b><br><small>${t('apk_note')}</small><a class="btn" style="margin-top:10px;text-align:center;text-decoration:none" href="${APK_URL}">⬇ ${t('apk_get')}</a></div>`}`;
   on('[data-v]', el => go('more', {name:el.dataset.v}));
   $('#go_yoga').onclick = () => go('yoga');
+  $('#go_lib').onclick = () => go('lib');
   $('#exp').onclick = exportData;
   $('#imp').onclick = () => $('#impf').click();
   $('#impf').onchange = e => { if(e.target.files[0]) importData(e.target.files[0]); };

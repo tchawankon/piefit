@@ -9,7 +9,7 @@ Vanilla JS (ES6+), no framework, no build step, no runtime dependencies. Keep it
   A module that another one needs must load before it.
 - Each feature is an IIFE exposing one global (`Habits`, `Challenge`, `Nutrition`, `Coach`, `Body`, `Yoga`). `app.js` wires them in.
 - Globals available to every module: `store`, `t(key, ...args)`, `esc`, `EX`, `LOG`, `LADDERS`, `MASTERED`, `SET`, `TG`, `CAL`, `go(tab, view)`, `render()`, `persist()`, `toast`, `app`.
-- Routing: `go(tab, view)` then `render()`. The bottom nav has 5 tabs (home, food, lib, prog, more). Yoga lives under More; keep the nav at 5 or fewer so it fits a 360px screen.
+- Routing: `go(tab, view)` then `render()`. The bottom nav has 4 tabs (home, food, prog, more). Yoga and the exercise library (`lib`) live under More; keep the nav at 5 or fewer so it fits a 360px screen.
 - Storage: `store.get(k, default)` / `store.set(k, value)` (localStorage). Never touch `localStorage` directly in feature code.
 - CSS: variables and classes already in `index.html` (`--bg --card --ink --mute --line --accent --ok --warn --soft`; `.card .row .seg .chip .btn .tag .num .inp .track .modal .sheet`). Reuse them before adding styles.
 - Service worker `sw.js`: every new file must be added to `FILES`, and `VERSION` bumped, or the offline cache goes stale.
