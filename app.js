@@ -33,12 +33,12 @@ function loadState(){
   }
   if(!VENUE_EQ[SET.venue]) SET.venue = 'rings';
   SET.sfx = Object.assign({}, SET_DEFAULT.sfx, isObj(SET.sfx) ? SET.sfx : {});
-  Coach.load(); Body.load(); Yoga.load();
+  Coach.load(); Body.load(); Yoga.load(); if(typeof Habits !== "undefined") Habits.load(); if(typeof Challenge !== "undefined") Challenge.load(); if(typeof Nutrition !== "undefined") Nutrition.load();
 }
 function persist(){
   store.set('log', LOG); store.set('mastered', MASTERED); store.set('news', NEWS);
   store.set('targets', TG); store.set('cal', CAL); store.set('settings', SET);
-  Coach.save();
+  Coach.save(); if(typeof Habits !== "undefined") Habits.save(); if(typeof Challenge !== "undefined") Challenge.save(); if(typeof Nutrition !== "undefined") Nutrition.save();
 }
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -495,7 +495,7 @@ function pickExercise(title, hint, ids, onPick){
 
 /* ================= routing ================= */
 let tab = 'home', view = {name:'home'};
-const TABS = [['home','🏠','tab_home'], ['lib','📚','tab_lib'], ['yoga','🧘','tab_yoga'], ['prog','📈','tab_prog'], ['more','☰','tab_more']];
+const TABS = [['home','🏠','tab_home'], ['food','🥗','tab_food'], ['lib','📚','tab_lib'], ['prog','📈','tab_prog'], ['more','☰','tab_more']];
 function go(tb, v){ tab = tb; view = v || {name:'home'}; render(); window.scrollTo(0, 0); }
 let wakeLock = null;
 async function keepAwake(on){
@@ -518,12 +518,12 @@ function render(){
   const full = ['run','onboard','summary','routine','yrun','ysum'].includes(view.name);
   nav.style.display = full ? 'none' : 'flex';
   document.body.classList.toggle('nonav', full);
-  nav.innerHTML = TABS.map(([k, i, l]) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}"><span class="ic">${i}</span>${t(l)}</button>`).join('');
+  nav.innerHTML = TABS.map(([k, i, l]) => `<button class="${tab === k || (k === 'more' && tab === 'yoga') ? 'on' : ''}" data-tab="${k}"><span class="ic">${i}</span>${t(l)}</button>`).join('');
   nav.querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.tab));
   const V = {session:sessionView, run:runView, summary:summaryView, onboard:onboardView, detail:detailView,
     paths:pathsView, guide:guideView, settings:settingsView, routine:Coach.routineView, plan:Coach.planView, profile:Coach.profileView, coach:Coach.AI.view,
     ysess:Yoga.sessView, yvids:Yoga.vidsView, ypose:Yoga.poseView, yrun:Yoga.runView, ysum:Yoga.sumView};
-  if(view.name === 'home') ({home:homeView, lib:libView, yoga:Yoga.homeView, prog:progView, more:moreView})[tab]();
+  if(view.name === 'home') ({home:homeView, food:(typeof Nutrition !== 'undefined' ? Nutrition.view : () => {}), lib:libView, yoga:Yoga.homeView, prog:progView, more:moreView})[tab]();
   else V[view.name]();
 }
 
@@ -561,6 +561,8 @@ function homeView(){
     reason = focus.length ? t('focus', focus.join(', ')) : '';
   }
   app.innerHTML = `<div class="top"><div class="grow"><h1>PieFit</h1><p class="sub">${t('home_sub')}</p></div></div>
+    ${typeof Habits !== "undefined" ? Habits.cardHTML() : ""}
+    ${typeof Challenge !== "undefined" ? Challenge.homeBannerHTML() : ""}
     ${ACTIVE ? `<div class="card hl"><b>⏸ ${t('resume_title')}</b><br><small>${sessionName(ACTIVE.s)} · ${t('ex_of', Math.min(ACTIVE.i + 1, ACTIVE.list.length), ACTIVE.list.length)}</small>
       <div class="row" style="margin-top:10px"><button class="btn" id="resume">${t('resume')}</button><button class="btn ghost w-auto" id="discard">${t('discard')}</button></div></div>` : ''}
     ${NEWS.map((n, i) => `<div class="card warn row"><div class="grow">${newsText(n)}</div><button class="chip" data-news="${i}">OK</button></div>`).join('')}
@@ -604,6 +606,8 @@ function homeView(){
   $('#moretips').onclick = () => { progSub = 'review'; go('prog'); };
   if($('#resume')) $('#resume').onclick = () => { Native.prepare(); if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
   if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };
+  if(typeof Habits !== 'undefined') Habits.bindEvents(app);
+  if(typeof Challenge !== 'undefined') Challenge.bindHomeBanner(app);
 }
 function lastDone(sid){
   const l = [...LOG].reverse().find(l => l.sess === sid);
@@ -971,9 +975,9 @@ function detailView(){
 /* ================= progress ================= */
 let progSub = 'week';
 function progView(){
-  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
+  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['journey', (typeof SET !== 'undefined' && SET.lang === 'th' ? '🗺️ แผน 30 วัน & สถิติ' : '🗺️ 30-Day Program & Stats')], ['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
   on('[data-sub]', el => { progSub = el.dataset.sub; render(); });
-  ({week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, base:progBase})[progSub]($('#pbody'));
+  ({journey:(box) => typeof Challenge !== 'undefined' ? Challenge.renderView(box) : null, week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, base:progBase})[progSub]($('#pbody'));
 }
 function progWeek(box){
   const wk = weekSets(), since = Date.now() - 7*DAY, rec = recentMuscles();
@@ -1022,6 +1026,7 @@ function progBase(box){
 /* ================= more: paths, guide, settings, backup ================= */
 function moreView(){
   app.innerHTML = `<h1>${t('tab_more')}</h1>
+    <div class="card sess row" id="go_yoga"><span class="emoji">🧘</span><div class="grow"><b>${t('tab_yoga')}</b><br><small>${SET.lang === 'th' ? 'โยคะ ยืดเหยียด และคลาสออกกำลังกายตามวิดีโอ' : 'Yoga, stretching and follow-along classes'}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="plan"><span class="emoji">📅</span><div class="grow"><b>${t('pl_title')}</b><br><small>${t('pl_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="profile"><span class="emoji">🩹</span><div class="grow"><b>${t('pf_title')}</b><br><small>${t('pf_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="coach"><span class="emoji">🤖</span><div class="grow"><b>${t('ai_title')}</b><br><small>${Coach.AI.ready() ? t('ai_sub_on') : t('ai_sub_off')}</small></div><span class="go">›</span></div>
@@ -1037,6 +1042,7 @@ function moreView(){
       : `<h2>${t('install')}</h2><div class="card"><small>${t('install_note')}</small></div>
          <div class="card"><b>🤖 ${t('apk_title')}</b><br><small>${t('apk_note')}</small><a class="btn" style="margin-top:10px;text-align:center;text-decoration:none" href="${APK_URL}">⬇ ${t('apk_get')}</a></div>`}`;
   on('[data-v]', el => go('more', {name:el.dataset.v}));
+  $('#go_yoga').onclick = () => go('yoga');
   $('#exp').onclick = exportData;
   $('#imp').onclick = () => $('#impf').click();
   $('#impf').onchange = e => { if(e.target.files[0]) importData(e.target.files[0]); };
@@ -1137,7 +1143,7 @@ function settingsView(){
   };
 }
 function exportData(){
-  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries}, Coach.exportState(), Yoga.exportState());
+  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries}, Coach.exportState(), Yoga.exportState(), typeof Habits !== "undefined" ? {habits:Habits.cfg, habitsLogs:Habits.logs, inbody:Habits.inbodyHistory} : {}, typeof Challenge !== "undefined" ? {challenge:Challenge.state} : {}, typeof Nutrition !== "undefined" ? {nutrition:Nutrition.exportState()} : {});
   const name = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => alert(t('export_fail'))); return; }
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
@@ -1156,7 +1162,7 @@ function importData(file){
     LOG = d.log.filter(l => l && typeof l.ex === 'string' && typeof l.t === 'number' && typeof l.reps === 'number')
       .map((l, i) => { const o = {id: typeof l.id === 'string' ? l.id : l.t + '-' + i, t:l.t, sess:String(l.sess || ''), ex:l.ex, reps:l.reps};
         if(typeof l.w === 'number') o.w = l.w; if(l.cal) o.cal = true; if([1, 2, 3, 4].includes(l.rpe)) o.rpe = l.rpe; return o; });
-    Coach.importState(d); Yoga.importState(d);
+    Coach.importState(d); Yoga.importState(d); if(d.habits) store.set('habits_cfg', d.habits); if(d.habitsLogs) store.set('habits_logs', d.habitsLogs); if(d.inbody) store.set('habits_inbody', d.inbody); if(d.challenge) { store.set('challenge_state_v4', d.challenge); } if(d.nutrition && typeof Nutrition !== 'undefined') Nutrition.importState(d.nutrition); if(typeof Habits !== 'undefined') Habits.load(); if(typeof Challenge !== 'undefined') Challenge.load(); if(typeof Nutrition !== 'undefined') Nutrition.load();
     if(Array.isArray(d.body)) Body.entries = d.body.filter(e => isObj(e) && typeof e.t === 'number');
     MASTERED = isObj(d.mastered) ? d.mastered : {};
     NEWS = Array.isArray(d.news) ? d.news.filter(n => typeof n === 'string' || isObj(n)) : [];
