@@ -723,6 +723,7 @@ const Habits = (() => {
     load,
     save,
     syncProtein,
+    doneCount: key => doneCountOf(LOGS[key]),
     cardHTML,
     bindEvents,
     openConfigModal,

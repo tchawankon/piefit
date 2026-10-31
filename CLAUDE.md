@@ -5,7 +5,7 @@ Vanilla JS (ES6+), no framework, no build step, no runtime dependencies. Keep it
 
 ## Architecture
 
-- Classic `<script>` tags in `index.html`, loaded in this order: native, data, i18n, i18n-trainer, sound, coach, body, form, videos, yoga, habits, challenge, nutrition-data, nutrition-ai, nutrition, app.
+- Classic `<script>` tags in `index.html`, loaded in this order: native, data, i18n, i18n-trainer, sound, coach, body, form, videos, yoga, habits, challenge, nutrition-data, nutrition-ai, nutrition, calendar, app.
   A module that another one needs must load before it.
 - Each feature is an IIFE exposing one global (`Habits`, `Challenge`, `Nutrition`, `Coach`, `Body`, `Yoga`). `app.js` wires them in.
 - Globals available to every module: `store`, `t(key, ...args)`, `esc`, `EX`, `LOG`, `LADDERS`, `MASTERED`, `SET`, `TG`, `CAL`, `go(tab, view)`, `render()`, `persist()`, `toast`, `app`.

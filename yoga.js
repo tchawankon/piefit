@@ -464,5 +464,5 @@ const Yoga = (() => {
   }
   function clear(){ YLOG = []; YLVL = {}; YFEEL = {}; save(); }
   function summary(){ return `${minutesSince(Date.now() - 7*DAY)} min this week; pose levels: ` + (Object.entries(YLVL).map(([k, v]) => k + ' ' + v + '/3').join(', ') || 'defaults'); }
-  return {load, save, POSES, SESS, preFor, postFor, start, homeView, poseView, sessView, vidsView, runView, sumView, minutesSince, classMinutesSince, exportState, importState, clear, summary};
+  return {load, save, POSES, SESS, preFor, postFor, start, homeView, poseView, sessView, vidsView, runView, sumView, minutesSince, classMinutesSince, exportState, importState, clear, summary, get log(){ return YLOG; }};
 })();

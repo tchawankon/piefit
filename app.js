@@ -975,9 +975,9 @@ function detailView(){
 /* ================= progress ================= */
 let progSub = 'week';
 function progView(){
-  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['journey', (typeof SET !== 'undefined' && SET.lang === 'th' ? '🗺️ แผน 30 วัน & สถิติ' : '🗺️ 30-Day Program & Stats')], ['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
+  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['journey', (typeof SET !== 'undefined' && SET.lang === 'th' ? '🗺️ แผน 30 วัน & สถิติ' : '🗺️ 30-Day Program & Stats')], ['cal', SET.lang === 'th' ? '📅 ปฏิทิน' : '📅 Calendar'], ['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
   on('[data-sub]', el => { progSub = el.dataset.sub; render(); });
-  ({journey:(box) => typeof Challenge !== 'undefined' ? Challenge.renderView(box) : null, week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, base:progBase})[progSub]($('#pbody'));
+  ({journey:(box) => typeof Challenge !== 'undefined' ? Challenge.renderView(box) : null, cal:Calendar.view, week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, base:progBase})[progSub]($('#pbody'));
 }
 function progWeek(box){
   const wk = weekSets(), since = Date.now() - 7*DAY, rec = recentMuscles();
