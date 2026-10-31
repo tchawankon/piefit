@@ -19,6 +19,7 @@ Vanilla JS (ES6+), no framework, no build step, no runtime dependencies. Keep it
 | Module | Keys |
 |---|---|
 | Habits | `habits_cfg`, `habits_logs`, `habits_inbody` |
+| Body | `body` (weigh-ins), `body_goal` (target weight, kg) |
 | Challenge | `challenge_state_v4` |
 | Nutrition | `nutrition_days_v1`, `nutrition_my_foods_v1`, `nutrition_custom_targets_v1` |
 | AI keys | `aikey` (Claude key, shared with the coach), `nutri_key` (Food tab), `gemini_key` (legacy) |

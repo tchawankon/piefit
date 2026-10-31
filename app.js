@@ -1143,7 +1143,7 @@ function settingsView(){
   };
 }
 function exportData(){
-  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries}, Coach.exportState(), Yoga.exportState(), typeof Habits !== "undefined" ? {habits:Habits.cfg, habitsLogs:Habits.logs, inbody:Habits.inbodyHistory} : {}, typeof Challenge !== "undefined" ? {challenge:Challenge.state} : {}, typeof Nutrition !== "undefined" ? {nutrition:Nutrition.exportState()} : {});
+  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries, bodyGoal:Body.goal}, Coach.exportState(), Yoga.exportState(), typeof Habits !== "undefined" ? {habits:Habits.cfg, habitsLogs:Habits.logs, inbody:Habits.inbodyHistory} : {}, typeof Challenge !== "undefined" ? {challenge:Challenge.state} : {}, typeof Nutrition !== "undefined" ? {nutrition:Nutrition.exportState()} : {});
   const name = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => alert(t('export_fail'))); return; }
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
@@ -1164,6 +1164,7 @@ function importData(file){
         if(typeof l.w === 'number') o.w = l.w; if(l.cal) o.cal = true; if([1, 2, 3, 4].includes(l.rpe)) o.rpe = l.rpe; return o; });
     Coach.importState(d); Yoga.importState(d); if(d.habits) store.set('habits_cfg', d.habits); if(d.habitsLogs) store.set('habits_logs', d.habitsLogs); if(d.inbody) store.set('habits_inbody', d.inbody); if(d.challenge) { store.set('challenge_state_v4', d.challenge); } if(d.nutrition && typeof Nutrition !== 'undefined') Nutrition.importState(d.nutrition); if(typeof Habits !== 'undefined') Habits.load(); if(typeof Challenge !== 'undefined') Challenge.load(); if(typeof Nutrition !== 'undefined') Nutrition.load();
     if(Array.isArray(d.body)) Body.entries = d.body.filter(e => isObj(e) && typeof e.t === 'number');
+    Body.goal = typeof d.bodyGoal === 'number' ? d.bodyGoal : null; if(typeof Habits !== 'undefined') Habits.onWeight();
     MASTERED = isObj(d.mastered) ? d.mastered : {};
     NEWS = Array.isArray(d.news) ? d.news.filter(n => typeof n === 'string' || isObj(n)) : [];
     if(isObj(d.targets)){ TG = {type: BASE_TARGET[d.targets.type] ? d.targets.type : 'general', custom: isObj(d.targets.custom) ? d.targets.custom : {}}; }

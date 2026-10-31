@@ -8,7 +8,7 @@ const Calendar = (() => {
 
   const pad = n => String(n).padStart(2, '0');
   const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const COLORS = { lift: 'var(--accent)', yoga: '#1098ad', habit: 'var(--ok)', food: '#fbbf24' };
+  const COLORS = { lift: 'var(--accent)', yoga: '#1098ad', habit: 'var(--ok)', food: '#fbbf24', weight: '#a855f7' };
 
   function sessLabel(id, isTh) {
     const s = (typeof SESSIONS !== 'undefined') ? SESSIONS.find(x => x.id === id) : null;
@@ -20,7 +20,7 @@ const Calendar = (() => {
   // Everything logged inside one month, indexed by date key
   function collect(first, last) {
     const days = {};
-    const day = k => days[k] || (days[k] = { sets: [], yoga: [], habits: 0, food: null });
+    const day = k => days[k] || (days[k] = { sets: [], yoga: [], habits: 0, food: null, weight: null, waist: null });
     const from = first.getTime(), to = last.getTime() + 86400000;
 
     (typeof LOG !== 'undefined' ? LOG : []).forEach(l => {
@@ -29,6 +29,12 @@ const Calendar = (() => {
     const ylog = (typeof Yoga !== 'undefined' && Yoga.log) ? Yoga.log : [];
     ylog.forEach(y => {
       if (y.t >= from && y.t < to) day(keyOf(new Date(y.t))).yoga.push(y);
+    });
+    ((typeof Body !== 'undefined' && Body.entries) ? Body.entries : []).slice().sort((a, b) => a.t - b.t).forEach(e => {
+      if (e.t < from || e.t >= to) return;
+      const dd = day(keyOf(new Date(e.t)));   // the last weigh-in of the day wins
+      if (typeof e.weight === 'number') dd.weight = e.weight;
+      if (typeof e.waist === 'number') dd.waist = e.waist;
     });
     for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1)) {
       const k = keyOf(d);
@@ -60,6 +66,8 @@ const Calendar = (() => {
     const yogaDays = Object.values(data).filter(d => d.yoga.length).length;
     const habitDays = Object.values(data).filter(d => d.habits >= 3).length;
     const foodDays = Object.values(data).filter(d => d.food).length;
+    const wList = Object.keys(data).sort().map(k => data[k].weight).filter(v => v != null);
+    const wDiff = wList.length > 1 ? Math.round((wList[wList.length - 1] - wList[0]) * 10) / 10 : null;
     const setCount = Object.values(data).reduce((s, d) => s + d.sets.length, 0);
 
     let cells = '';
@@ -70,7 +78,7 @@ const Calendar = (() => {
       const future = k > todayKey;
       const dots = d ? [
         d.sets.length ? COLORS.lift : '', d.yoga.length ? COLORS.yoga : '',
-        d.habits >= 3 ? COLORS.habit : '', d.food ? COLORS.food : ''
+        d.habits >= 3 ? COLORS.habit : '', d.food ? COLORS.food : '', d.weight != null ? COLORS.weight : ''
       ].filter(Boolean).map(c => `<i style="background:${c}"></i>`).join('') : '';
       cells += `<button class="cal-day${k === todayKey ? ' today' : ''}${k === selected ? ' sel' : ''}${d && d.sets.length ? ' lift' : ''}" data-day="${k}" ${future ? 'disabled' : ''} aria-label="${k}">
         <b>${n}</b><span class="cal-dots">${dots}</span></button>`;
@@ -87,8 +95,8 @@ const Calendar = (() => {
         .cal-day.sel{outline:2px solid var(--ink);outline-offset:1px}
         .cal-day:disabled{opacity:.35;cursor:default}
         #cal_next:disabled{opacity:.35;cursor:default}
-        .cal-dots{display:flex;gap:2px;height:6px}
-        .cal-dots i{width:6px;height:6px;border-radius:50%;display:block}
+        .cal-dots{display:flex;gap:2px;height:5px}
+        .cal-dots i{width:5px;height:5px;border-radius:50%;display:block}
         .cal-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--mute);margin:10px 0 2px}
         .cal-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
       </style>
@@ -102,6 +110,7 @@ const Calendar = (() => {
         <span class="chip">🧘 ${yogaDays} ${isTh ? 'วันโยคะ' : 'yoga days'}</span>
         <span class="chip">✓ ${habitDays} ${isTh ? 'วัน habit ครบ' : 'habit days'}</span>
         <span class="chip">${setCount} ${isTh ? 'เซ็ต' : 'sets'}</span>
+        ${wDiff != null ? `<span class="chip">⚖️ ${wDiff > 0 ? '+' : ''}${wDiff} kg</span>` : ''}
       </div>
       <div class="card" style="padding:10px">
         <div class="cal-grid" style="margin-bottom:4px">${heads.map(h => `<div class="cal-head">${h}</div>`).join('')}</div>
@@ -111,6 +120,7 @@ const Calendar = (() => {
           <span><i style="background:${COLORS.yoga}"></i>${isTh ? 'โยคะ' : 'Yoga'}</span>
           <span><i style="background:${COLORS.habit}"></i>${isTh ? 'habit ≥ 3' : 'Habits ≥ 3'}</span>
           <span><i style="background:${COLORS.food}"></i>${isTh ? 'บันทึกอาหาร' : 'Food logged'}</span>
+          <span><i style="background:${COLORS.weight}"></i>${isTh ? 'ชั่งน้ำหนัก' : 'Weight'}</span>
         </div>
       </div>
       <div id="cal_detail"></div>`;
@@ -149,6 +159,9 @@ const Calendar = (() => {
     }
     if (d && d.food) {
       parts.push(`<div style="margin-top:8px"><b>🥗 ${isTh ? 'อาหาร' : 'Food'}</b> <small>· ${d.food.cal.toLocaleString()} kcal · P ${d.food.p}g · C ${d.food.c}g · F ${d.food.f}g</small></div>`);
+    }
+    if (d && d.weight != null) {
+      parts.push(`<div style="margin-top:8px"><b>⚖️ ${isTh ? 'น้ำหนัก' : 'Weight'}</b> <small>· ${d.weight} kg${d.waist != null ? ` · ${isTh ? 'เอว' : 'waist'} ${d.waist} cm` : ''}</small></div>`);
     }
     if (!parts.length) parts.push(`<small style="display:block;margin-top:6px;color:var(--mute)">${isTh ? 'ไม่มีบันทึกในวันนี้' : 'Nothing logged this day.'}</small>`);
 

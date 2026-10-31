@@ -57,21 +57,15 @@ const Habits = (() => {
   }
   const doneCountOf = log => Object.values(doneFlags(log)).filter(Boolean).length;
 
-  function latestWeight() {
-    if (typeof Body !== 'undefined' && Array.isArray(Body.entries)) {
-      const e = [...Body.entries].reverse().find(x => typeof x.weight === 'number' && x.weight > 0);
-      if (e) return e.weight;
-    }
-    const saved = store.get('body', []);
-    if (Array.isArray(saved)) {
-      const e = [...saved].reverse().find(x => typeof x.weight === 'number' && x.weight > 0);
-      if (e) return e.weight;
-    }
-    return CFG.weight || 70;
+  // The weight logged in the Body tab is the source of truth; CFG.weight is only a fallback
+  function bodyWeight() {
+    const e = (typeof Body !== 'undefined' && Body.latestWeight) ? Body.latestWeight() : null;
+    return e ? e.weight : null;
   }
+  const latestWeight = () => bodyWeight() || CFG.weight || 70;
 
   function calculate(cfg) {
-    const w = cfg.weight || latestWeight();
+    const w = cfg.weight > 0 ? cfg.weight : latestWeight();
     const h = cfg.height || 175;
     const a = cfg.age || 28;
     const g = cfg.gender || 'm';
@@ -120,7 +114,13 @@ const Habits = (() => {
     const ib = store.get(KEY_INBODY, null);
     if (Array.isArray(ib)) INBODY_HIST = ib;
 
-    // Apply auto-calc on load if not explicitly locked
+    const bw = bodyWeight();
+    if (bw) CFG.weight = bw;
+    applyTargets();
+  }
+
+  // Recalculate BMR / TDEE and (unless locked) the daily targets from CFG
+  function applyTargets() {
     const m = calculate(CFG);
     CFG.bmr = m.bmr;
     CFG.tdee = m.tdee;
@@ -129,6 +129,14 @@ const Habits = (() => {
       CFG.proteinTarget = m.protTarget;
       CFG.waterTarget = m.waterTarget;
     }
+  }
+
+  // Called by Body whenever a weigh-in is added, removed or imported
+  function onWeight() {
+    const bw = bodyWeight();
+    if (bw) CFG.weight = bw;
+    applyTargets();
+    save();
   }
 
   function save() {
@@ -195,6 +203,15 @@ const Habits = (() => {
     }
     html += '</div>';
     return html;
+  }
+
+  function weightLine(isTh) {
+    const e = (typeof Body !== 'undefined' && Body.latestWeight) ? Body.latestWeight() : null;
+    if (!e) return isTh ? 'ยังไม่ได้ชั่ง · แตะเพื่อบันทึก' : 'Not logged yet · tap to log';
+    const days = Math.round((new Date(todayIso()) - new Date(dateKey(new Date(e.t)))) / 86400000);
+    const when = days <= 0 ? (isTh ? 'วันนี้' : 'today') : (days === 1 ? (isTh ? 'เมื่อวาน' : 'yesterday') : (isTh ? `${days} วันก่อน` : `${days} d ago`));
+    const g = Body.goal;
+    return `<b>${e.weight}</b> kg · ${when}${g ? ` · 🎯 ${g} kg` : ''}`;
   }
 
   /* ---------- Main UI Card on Home Screen ---------- */
@@ -292,6 +309,16 @@ const Habits = (() => {
             <small style="display:block">${today.steps > 0 ? `${today.steps.toLocaleString()} / ${stpTarget.toLocaleString()} ${isTh ? 'ก้าว' : 'steps'}` : (today.stepsDone ? (isTh ? `✓ ผ่านเป้าหมายแล้ว (≥ ${stpTarget.toLocaleString()} ก้าว)` : `✓ Target reached (≥ ${stpTarget.toLocaleString()} steps)`) : (isTh ? `เป้าหมาย ${stpTarget.toLocaleString()} ก้าว (แตะเพื่อติ๊กผ่าน)` : `Target ${stpTarget.toLocaleString()} steps (Tap to check)`))}</small>
           </div>
           <button class="chip ${stpDone ? 'on' : ''}" id="hb_btn_steps" style="font-size:12px">${today.steps > 0 ? (isTh ? `${today.steps.toLocaleString()} ก้าว` : `${today.steps.toLocaleString()} steps`) : (stpDone ? (isTh ? '✓ ครบแล้ว' : '✓ Done') : (isTh ? 'ใส่เลขก้าว' : 'Log'))}</button>
+        </div>
+
+        <!-- 6. WEIGHT (tracked in Body, not part of the 5-habit score) -->
+        <div class="setrow" style="padding:8px 0">
+          <button class="num" id="hb_weigh_btn" style="cursor:pointer;background:var(--bg);border:1px solid var(--line)">⚖️</button>
+          <div class="grow" style="cursor:pointer" id="hb_weigh_txt">
+            <b>${isTh ? 'น้ำหนักตัว' : 'Body weight'}</b>
+            <small style="display:block">${weightLine(isTh)}</small>
+          </div>
+          <button class="chip" id="hb_weigh_add" style="font-size:12px">${isTh ? 'ชั่งน้ำหนัก' : 'Weigh in'}</button>
         </div>
 
         <!-- Macro Summary Footer -->
@@ -400,6 +427,11 @@ const Habits = (() => {
 
     const bStpBtn = el.querySelector('#hb_btn_steps');
     if (bStpBtn) bStpBtn.onclick = () => openStepsModal(tlog);
+
+    ['#hb_weigh_btn', '#hb_weigh_txt', '#hb_weigh_add'].forEach(sel => {
+      const b = el.querySelector(sel);
+      if (b && typeof Body !== 'undefined') b.onclick = () => Body.openWeightSheet();
+    });
 
     // Modal Triggers
     const cfgBtn = el.querySelector('#hb_cfg_btn');
@@ -671,6 +703,8 @@ const Habits = (() => {
       }
 
       m.querySelector('#hb_m_save').onclick = () => {
+        // a weight typed here is logged as a weigh-in so there is one history, not two
+        if (draft.weight > 0 && draft.weight !== bodyWeight() && typeof Body !== 'undefined' && Body.addEntry) Body.addEntry({ weight: draft.weight });
         const finalMetrics = calculate(draft);
         draft.bmr = finalMetrics.bmr;
         draft.tdee = finalMetrics.tdee;
@@ -723,6 +757,7 @@ const Habits = (() => {
     load,
     save,
     syncProtein,
+    onWeight,
     doneCount: key => doneCountOf(LOGS[key]),
     cardHTML,
     bindEvents,
