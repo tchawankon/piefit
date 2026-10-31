@@ -188,13 +188,10 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
             <span class="grow" style="text-align:right"><b>${totals.cal.toLocaleString()}</b> / ${targets.cal.toLocaleString()} kcal (${calPct}%)</span>
           </div>
           <div class="track" style="height:10px"><div class="fill ${calPct >= 100 ? 'warn' : ''}" style="width:${calPct}%;background:${totals.cal > targets.cal + 200 ? 'var(--warn)' : 'var(--accent)'}"></div></div>
-          <div class="row" style="gap:5px;margin-top:8px;flex-wrap:wrap">
-            <span style="font-size:11px;color:var(--mute)">${isTh ? 'ปรับด่วน:' : 'Quick adjust:'}</span>
-            <button class="chip" data-quick-cal="100" style="padding:2px 7px;font-size:11px;height:auto">+100</button>
-            <button class="chip" data-quick-cal="250" style="padding:2px 7px;font-size:11px;height:auto">+250</button>
-            <button class="chip" data-quick-cal="500" style="padding:2px 7px;font-size:11px;height:auto">+500</button>
-            <button class="chip" data-quick-cal="-100" style="padding:2px 7px;font-size:11px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 100 แคล' : '-100 kcal'}">-100</button>
-            <button class="chip" data-quick-cal="-250" style="padding:2px 7px;font-size:11px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 250 แคล' : '-250 kcal'}">-250</button>
+          <div class="row" style="gap:8px;margin-top:10px">
+            <button class="chip" data-adj="cal" data-sign="-" style="width:48px;min-height:40px;font-size:20px;color:var(--warn);flex:none" aria-label="${isTh ? 'ลดแคลอรี่' : 'Subtract calories'}">−</button>
+            <button class="chip" data-adj="all" data-sign="+" style="flex:1;min-height:40px;font-size:13px;color:var(--accent);border-color:var(--accent)">⚡ ${isTh ? 'เพิ่มด่วน / ปรับละเอียด' : 'Quick add / fine adjust'}</button>
+            <button class="chip" data-adj="cal" data-sign="+" style="width:48px;min-height:40px;font-size:20px;color:var(--accent);border-color:var(--accent);flex:none" aria-label="${isTh ? 'เพิ่มแคลอรี่' : 'Add calories'}">+</button>
           </div>
         </div>
 
@@ -207,12 +204,9 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
             </div>
             <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px;cursor:pointer" data-adjust-macro="p">${totals.p} <small style="font-weight:400;color:var(--mute)">/ ${targets.p}g</small></div>
             <div class="track" style="height:6px;margin-bottom:8px"><div class="fill ${pPct >= 100 ? 'ok' : ''}" style="width:${pPct}%"></div></div>
-            <div class="row" style="gap:3px;flex-wrap:wrap">
-              <button class="chip" data-quick-p="10" style="padding:2px 5px;font-size:10px;height:auto">+10</button>
-              <button class="chip" data-quick-p="20" style="padding:2px 5px;font-size:10px;height:auto">+20</button>
-              <button class="chip" data-quick-p="25" style="padding:2px 5px;font-size:10px;height:auto" title="${isTh ? 'เวย์ 1 สกู๊ป / อกไก่ 100g' : '1 Scoop / Chicken'}">+25</button>
-              <button class="chip" data-quick-p="-10" style="padding:2px 5px;font-size:10px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 10g' : '-10g'}">-10</button>
-              <button class="chip" data-quick-p="-20" style="padding:2px 5px;font-size:10px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 20g' : '-20g'}">-20</button>
+            <div class="row" style="gap:6px">
+              <button class="chip" data-adj="p" data-sign="-" style="flex:1;min-height:40px;font-size:20px;padding:0;color:var(--warn)" aria-label="-">−</button>
+              <button class="chip" data-adj="p" data-sign="+" style="flex:1;min-height:40px;font-size:20px;padding:0;color:var(--accent);border-color:var(--accent)" aria-label="+">+</button>
             </div>
           </div>
 
@@ -223,12 +217,9 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
             </div>
             <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px;cursor:pointer" data-adjust-macro="c">${totals.c} <small style="font-weight:400;color:var(--mute)">/ ${targets.c}g</small></div>
             <div class="track" style="height:6px;margin-bottom:8px"><div class="fill" style="width:${cPct}%;background:#38bdf8"></div></div>
-            <div class="row" style="gap:3px;flex-wrap:wrap">
-              <button class="chip" data-quick-c="15" style="padding:2px 5px;font-size:10px;height:auto">+15</button>
-              <button class="chip" data-quick-c="30" style="padding:2px 5px;font-size:10px;height:auto" title="${isTh ? 'ข้าวสวย 1 ทัพพี' : '1 Ladle Rice'}">+30</button>
-              <button class="chip" data-quick-c="50" style="padding:2px 5px;font-size:10px;height:auto">+50</button>
-              <button class="chip" data-quick-c="-15" style="padding:2px 5px;font-size:10px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 15g' : '-15g'}">-15</button>
-              <button class="chip" data-quick-c="-30" style="padding:2px 5px;font-size:10px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 30g' : '-30g'}">-30</button>
+            <div class="row" style="gap:6px">
+              <button class="chip" data-adj="c" data-sign="-" style="flex:1;min-height:40px;font-size:20px;padding:0;color:var(--warn)" aria-label="-">−</button>
+              <button class="chip" data-adj="c" data-sign="+" style="flex:1;min-height:40px;font-size:20px;padding:0;color:var(--accent);border-color:var(--accent)" aria-label="+">+</button>
             </div>
           </div>
 
@@ -239,12 +230,9 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
             </div>
             <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px;cursor:pointer" data-adjust-macro="f">${totals.f} <small style="font-weight:400;color:var(--mute)">/ ${targets.f}g</small></div>
             <div class="track" style="height:6px;margin-bottom:8px"><div class="fill" style="width:${fPct}%;background:#fbbf24"></div></div>
-            <div class="row" style="gap:3px;flex-wrap:wrap">
-              <button class="chip" data-quick-f="5" style="padding:2px 5px;font-size:10px;height:auto">+5</button>
-              <button class="chip" data-quick-f="10" style="padding:2px 5px;font-size:10px;height:auto">+10</button>
-              <button class="chip" data-quick-f="15" style="padding:2px 5px;font-size:10px;height:auto">+15</button>
-              <button class="chip" data-quick-f="-5" style="padding:2px 5px;font-size:10px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 5g' : '-5g'}">-5</button>
-              <button class="chip" data-quick-f="-10" style="padding:2px 5px;font-size:10px;height:auto;color:var(--warn)" title="${isTh ? 'ลด 10g' : '-10g'}">-10</button>
+            <div class="row" style="gap:6px">
+              <button class="chip" data-adj="f" data-sign="-" style="flex:1;min-height:40px;font-size:20px;padding:0;color:var(--warn)" aria-label="-">−</button>
+              <button class="chip" data-adj="f" data-sign="+" style="flex:1;min-height:40px;font-size:20px;padding:0;color:var(--accent);border-color:var(--accent)" aria-label="+">+</button>
             </div>
           </div>
         </div>
@@ -252,7 +240,7 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
 
       <!-- 2. AI Nutrition Assistant & External Prompt Card -->
       <div class="card hl" style="padding:14px;margin-bottom:12px;border:1px solid var(--accent)">
-        <div class="row" style="margin-bottom:6px">
+        <div class="row" style="margin-bottom:6px;flex-wrap:wrap;gap:6px">
           <span class="emoji" style="font-size:22px">🤖</span>
           <b class="grow" style="font-size:15px">${isTh ? 'AI ช่วยคำนวณสารอาหาร' : 'AI Nutrition Assistant'}</b>
           <button class="chip mini" id="ai_cfg_key_btn" style="padding:3px 9px;font-size:11px;font-weight:600" title="${isTh ? 'ตั้งค่า AI API Key' : 'Configure API Key'}">
@@ -385,52 +373,9 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
       }
     };
 
-    // Quick Calories Add / Subtract
-    root.querySelectorAll('[data-quick-cal]').forEach(b => {
-      b.onclick = () => {
-        const val = parseInt(b.dataset.quickCal, 10);
-        if (!day.quickAdds) day.quickAdds = [];
-        const sign = val > 0 ? '+' : '';
-        day.quickAdds.push({ t: Date.now(), cal: val, label: `${sign}${val} kcal` });
-        save();
-        view();
-      };
-    });
-
-    // Quick Protein Add / Subtract
-    root.querySelectorAll('[data-quick-p]').forEach(b => {
-      b.onclick = () => {
-        const val = parseInt(b.dataset.quickP, 10);
-        if (!day.quickAdds) day.quickAdds = [];
-        const sign = val > 0 ? '+' : '';
-        day.quickAdds.push({ t: Date.now(), p: val, cal: val * 4, label: `${sign}${val}g Protein` });
-        save();
-        view();
-      };
-    });
-
-    // Quick Carbs Add / Subtract
-    root.querySelectorAll('[data-quick-c]').forEach(b => {
-      b.onclick = () => {
-        const val = parseInt(b.dataset.quickC, 10);
-        if (!day.quickAdds) day.quickAdds = [];
-        const sign = val > 0 ? '+' : '';
-        day.quickAdds.push({ t: Date.now(), c: val, cal: val * 4, label: `${sign}${val}g Carbs` });
-        save();
-        view();
-      };
-    });
-
-    // Quick Fat Add / Subtract
-    root.querySelectorAll('[data-quick-f]').forEach(b => {
-      b.onclick = () => {
-        const val = parseInt(b.dataset.quickF, 10);
-        if (!day.quickAdds) day.quickAdds = [];
-        const sign = val > 0 ? '+' : '';
-        day.quickAdds.push({ t: Date.now(), f: val, cal: val * 9, label: `${sign}${val}g Fat` });
-        save();
-        view();
-      };
+    // +/- buttons open the adjust sheet (precise stepper + quick presets)
+    root.querySelectorAll('[data-adj]').forEach(b => {
+      b.onclick = () => openAdjustSheet(b.dataset.adj, b.dataset.sign === '-' ? -1 : 1);
     });
 
     // Delete single quick add item
@@ -452,7 +397,7 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
     root.querySelectorAll('[data-adjust-macro]').forEach(el => {
       el.onclick = () => {
         const mKey = el.dataset.adjustMacro;
-        openMacroAdjustModal(mKey);
+        openAdjustSheet(mKey, 1);
       };
     });
 
@@ -1027,121 +972,155 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
     document.body.appendChild(m);
   }
 
-  /* ---------- Quick Macro Direct Adjust / Reset Modal ---------- */
-  function openMacroAdjustModal(macroKey) {
+  /* ---------- Adjust sheet: precise steppers + presets, calories follow the macros ---------- */
+  function openAdjustSheet(focus, sign) {
     const isTh = (typeof SET !== 'undefined' && SET.lang === 'th');
+    const FIELDS = [
+      { k: 'cal', ic: '🔥', th: 'แคลอรี่', en: 'Calories', unit: 'kcal', steps: [10, 50, 100] },
+      { k: 'p', ic: '🍗', th: 'โปรตีน', en: 'Protein', unit: 'g', steps: [1, 5, 10] },
+      { k: 'c', ic: '🍚', th: 'คาร์บ', en: 'Carbs', unit: 'g', steps: [1, 5, 10] },
+      { k: 'f', ic: '🥑', th: 'ไขมัน', en: 'Fat', unit: 'g', steps: [1, 5, 10] }
+    ];
+    const PRESETS = { cal: [100, 250, 500], p: [10, 20, 25, 30], c: [15, 30, 50], f: [5, 10, 15] };
+    const KCAL_PER_G = { p: 4, c: 4, f: 9 };
+    const day = getDayData();
+    const cur = dayTotals(day);
+    const focusKey = FIELDS.some(f => f.k === focus) ? focus : 'p';
+    const vals = { cal: 0, p: 0, c: 0, f: 0 };
+    let mode = sign < 0 ? -1 : 1;
+    let stepIdx = 1;
+    let calManual = false; // once calories are typed/stepped by hand they stop following the macros
+
     const m = document.createElement('div');
     m.className = 'modal';
-
-    const day = getDayData();
-    const totals = dayTotals(day);
-
-    const META = {
-      cal: { nameTh: 'พลังงานรวม (Calories)', nameEn: 'Calories', unit: 'kcal', cur: totals.cal, deltas: [100, 250, 500] },
-      p: { nameTh: 'โปรตีน (Protein)', nameEn: 'Protein', unit: 'g', cur: totals.p, deltas: [10, 20, 25] },
-      c: { nameTh: 'คาร์โบไฮเดรต (Carbs)', nameEn: 'Carbs', unit: 'g', cur: totals.c, deltas: [15, 30, 50] },
-      f: { nameTh: 'ไขมัน (Fat)', nameEn: 'Fat', unit: 'g', cur: totals.f, deltas: [5, 10, 15] }
-    };
-
-    const cfg = META[macroKey] || META.p;
-
     m.innerHTML = `
-      <div class="sheet" style="max-width:380px">
-        <div class="row" style="margin-bottom:10px">
-          <b class="grow" style="font-size:16px">✏️ ${isTh ? 'ปรับแต่ง ' + cfg.nameTh : 'Adjust ' + cfg.nameEn}</b>
-          <button class="chip mini" id="am_close">✕</button>
+      <div class="sheet" style="max-width:420px">
+        <div class="row" style="margin-bottom:8px">
+          <b class="grow" style="font-size:16px">✏️ ${isTh ? 'ปรับยอดวันนี้' : 'Adjust today'}</b>
+          <button class="chip mini" id="aj_close">✕</button>
         </div>
-
-        <div style="background:var(--bg);padding:10px 12px;border-radius:10px;margin-bottom:12px;text-align:center">
-          <span style="font-size:12px;color:var(--mute);display:block">${isTh ? 'ยอดสะสมปัจจุบันวันนี้:' : 'Current Today Total:'}</span>
-          <b style="font-size:24px;color:var(--accent)">${cfg.cur} ${cfg.unit}</b>
+        <div class="seg" style="margin:0 0 8px">
+          <button id="aj_add">＋ ${isTh ? 'เพิ่ม' : 'Add'}</button>
+          <button id="aj_sub">− ${isTh ? 'ลด' : 'Subtract'}</button>
         </div>
-
-        <!-- Quick Decrement Buttons -->
-        <div style="margin-bottom:10px">
-          <small style="color:var(--mute);display:block;margin-bottom:4px">🔻 ${isTh ? 'ลดยอดลง (Subtract):' : 'Subtract:'}</small>
-          <div class="row" style="gap:6px;flex-wrap:wrap">
-            ${cfg.deltas.map(d => `<button class="chip" data-adj-delta="-${d}" style="color:var(--warn);border-color:var(--line);flex:1">-${d}${cfg.unit}</button>`).join('')}
+        <div class="row" style="gap:6px;margin-bottom:10px;align-items:center">
+          <small style="color:var(--mute)">${isTh ? 'ขนาดก้าว:' : 'Step:'}</small>
+          <div class="seg" style="margin:0;flex:1" id="aj_steps">
+            <button data-si="0" style="min-height:36px;font-size:12px">${isTh ? 'ละเอียด' : 'Fine'}</button>
+            <button data-si="1" style="min-height:36px;font-size:12px">${isTh ? 'ปกติ' : 'Normal'}</button>
+            <button data-si="2" style="min-height:36px;font-size:12px">${isTh ? 'เร็ว' : 'Fast'}</button>
           </div>
         </div>
+        <div id="aj_presets" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+        ${FIELDS.map(f => `
+          <div class="row" style="gap:6px;margin-bottom:8px;padding:4px 6px;border-radius:12px;border:1px solid ${f.k === focusKey ? 'var(--accent)' : 'transparent'}">
+            <span style="width:84px;font-size:13px;flex:none">${f.ic} ${isTh ? f.th : f.en}</span>
+            <button class="chip" data-step="${f.k}" data-dir="-1" style="width:40px;min-height:40px;padding:0;font-size:20px;flex:none;touch-action:manipulation">−</button>
+            <input class="inp" type="number" inputmode="decimal" min="0" step="any" data-val="${f.k}" placeholder="0" style="margin:0;text-align:center;font-weight:700;min-width:0;flex:1">
+            <button class="chip" data-step="${f.k}" data-dir="1" style="width:40px;min-height:40px;padding:0;font-size:20px;flex:none;touch-action:manipulation">+</button>
+          </div>`).join('')}
+        <small id="aj_hint" style="display:block;color:var(--mute);margin:2px 0 8px"></small>
+        <div id="aj_preview" style="background:var(--bg);border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:12px;line-height:1.5"></div>
+        <button class="btn" id="aj_save"></button>
+      </div>`;
 
-        <!-- Quick Increment Buttons -->
-        <div style="margin-bottom:14px">
-          <small style="color:var(--mute);display:block;margin-bottom:4px">🔺 ${isTh ? 'เพิ่มยอด (Add):' : 'Add:'}</small>
-          <div class="row" style="gap:6px;flex-wrap:wrap">
-            ${cfg.deltas.map(d => `<button class="chip" data-adj-delta="${d}" style="color:var(--accent);border-color:var(--accent);flex:1">+${d}${cfg.unit}</button>`).join('')}
-          </div>
-        </div>
+    const q = sel => m.querySelector(sel);
+    const round1 = n => Math.round(n * 10) / 10;
+    const inputOf = k => q(`[data-val="${k}"]`);
+    const stepOf = k => FIELDS.find(f => f.k === k).steps[stepIdx];
 
-        <!-- Reset Button -->
-        <div class="row" style="gap:8px">
-          <button class="btn ghost" id="am_zero" style="color:var(--warn);border-color:var(--warn);flex:1">${isTh ? '🗑️ เคลียร์ยอดด่วนหมวดนี้เป็น 0' : 'Reset to 0'}</button>
-        </div>
-      </div>
-    `;
+    function autoCal() {
+      if (calManual) return;
+      vals.cal = Math.round(vals.p * KCAL_PER_G.p + vals.c * KCAL_PER_G.c + vals.f * KCAL_PER_G.f);
+    }
 
-    m.querySelector('#am_close').onclick = () => m.remove();
+    function refresh(skipKey) {
+      FIELDS.forEach(f => {
+        const inp = inputOf(f.k);
+        if (f.k !== skipKey) inp.value = vals[f.k] ? vals[f.k] : '';
+      });
+      q('#aj_add').classList.toggle('on', mode > 0);
+      q('#aj_sub').classList.toggle('on', mode < 0);
+      m.querySelectorAll('[data-si]').forEach(b => b.classList.toggle('on', +b.dataset.si === stepIdx));
+      q('#aj_presets').innerHTML = `<small style="color:var(--mute)">${isTh ? 'ค่าที่ใช้บ่อย:' : 'Common:'}</small>` +
+        PRESETS[focusKey].map(v => `<button class="chip" data-preset="${v}">+${v}${FIELDS[0].k === focusKey ? '' : 'g'}</button>`).join('');
+      m.querySelectorAll('[data-preset]').forEach(b => {
+        b.onclick = () => { bump(focusKey, +b.dataset.preset); };
+      });
+      q('#aj_hint').textContent = calManual
+        ? (isTh ? 'แคลอรี่ตั้งเอง (ไม่คำนวณจากสารอาหาร)' : 'Calories set manually')
+        : (isTh ? 'แคลอรี่คำนวณอัตโนมัติ: โปรตีน/คาร์บ ×4, ไขมัน ×9 (แก้เองได้)' : 'Calories auto: protein/carbs ×4, fat ×9 (editable)');
 
-    m.querySelectorAll('[data-adj-delta]').forEach(b => {
-      b.onclick = () => {
-        const delta = parseInt(b.dataset.adjDelta, 10);
-        if (!day.quickAdds) day.quickAdds = [];
-        const entry = { t: Date.now() };
-        if (macroKey === 'cal') {
-          entry.cal = delta;
-          entry.label = (delta > 0 ? `+${delta}` : `${delta}`) + ' kcal';
-        } else if (macroKey === 'p') {
-          entry.p = delta;
-          entry.cal = delta * 4;
-          entry.label = (delta > 0 ? `+${delta}g` : `${delta}g`) + ' Protein';
-        } else if (macroKey === 'c') {
-          entry.c = delta;
-          entry.cal = delta * 4;
-          entry.label = (delta > 0 ? `+${delta}g` : `${delta}g`) + ' Carbs';
-        } else if (macroKey === 'f') {
-          entry.f = delta;
-          entry.cal = delta * 9;
-          entry.label = (delta > 0 ? `+${delta}g` : `${delta}g`) + ' Fat';
-        }
-        day.quickAdds.push(entry);
-        save();
-        m.remove();
-        if (typeof toast === 'function') toast(isTh ? `ปรับ ${entry.label} เรียบร้อยแล้ว` : `Adjusted ${entry.label}`);
-        view();
+      const rows = FIELDS.filter(f => vals[f.k] > 0).map(f => {
+        const delta = mode > 0 ? vals[f.k] : -Math.min(vals[f.k], cur[f.k]);
+        const next = Math.max(0, round1(cur[f.k] + delta));
+        return `${f.ic} <b>${cur[f.k]}</b> → <b style="color:${mode > 0 ? 'var(--accent)' : 'var(--warn)'}">${next}</b> ${f.unit}`;
+      });
+      q('#aj_preview').innerHTML = rows.length ? rows.join('<br>') : `<span style="color:var(--mute)">${isTh ? 'ใส่ตัวเลขหรือกด + / − เพื่อดูยอดใหม่' : 'Enter a value or tap + / − to preview the new total'}</span>`;
+      const sv = q('#aj_save');
+      sv.textContent = (mode > 0 ? '＋ ' : '− ') + (isTh ? (mode > 0 ? 'บันทึกเพิ่ม' : 'บันทึกลด') : (mode > 0 ? 'Add to today' : 'Subtract from today'));
+      sv.style.background = mode > 0 ? '' : 'var(--warn)';
+    }
+
+    function bump(k, delta) {
+      vals[k] = Math.max(0, round1(vals[k] + delta));
+      if (k === 'cal') calManual = true; else autoCal();
+      refresh();
+    }
+
+    // tap = one step, hold = repeat
+    m.querySelectorAll('[data-step]').forEach(b => {
+      let to = null, iv = null;
+      const stop = () => { clearTimeout(to); clearInterval(iv); to = iv = null; };
+      b.onpointerdown = e => {
+        e.preventDefault();
+        const k = b.dataset.step, dir = +b.dataset.dir;
+        bump(k, dir * stepOf(k));
+        to = setTimeout(() => { iv = setInterval(() => bump(k, dir * stepOf(k)), 110); }, 400);
       };
+      ['onpointerup', 'onpointerleave', 'onpointercancel'].forEach(ev => { b[ev] = stop; });
+      b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bump(b.dataset.step, +b.dataset.dir * stepOf(b.dataset.step)); } };
     });
 
-    m.querySelector('#am_zero').onclick = () => {
-      const currentTotals = dayTotals(day);
-      const curVal = currentTotals[macroKey] || 0;
-      if (curVal > 0) {
-        if (!day.quickAdds) day.quickAdds = [];
-        const entry = { t: Date.now() };
-        if (macroKey === 'cal') {
-          entry.cal = -curVal;
-          entry.label = `Reset Calories to 0`;
-        } else if (macroKey === 'p') {
-          entry.p = -curVal;
-          entry.cal = -curVal * 4;
-          entry.label = `Reset Protein to 0`;
-        } else if (macroKey === 'c') {
-          entry.c = -curVal;
-          entry.cal = -curVal * 4;
-          entry.label = `Reset Carbs to 0`;
-        } else if (macroKey === 'f') {
-          entry.f = -curVal;
-          entry.cal = -curVal * 9;
-          entry.label = `Reset Fat to 0`;
-        }
-        day.quickAdds.push(entry);
-        save();
+    m.querySelectorAll('[data-val]').forEach(inp => {
+      inp.oninput = () => {
+        const k = inp.dataset.val;
+        vals[k] = Math.max(0, round1(parseFloat(inp.value) || 0));
+        if (k === 'cal') calManual = true; else autoCal();
+        refresh(k);
+      };
+    });
+    m.querySelectorAll('[data-si]').forEach(b => { b.onclick = () => { stepIdx = +b.dataset.si; refresh(); }; });
+    q('#aj_add').onclick = () => { mode = 1; refresh(); };
+    q('#aj_sub').onclick = () => { mode = -1; refresh(); };
+    q('#aj_close').onclick = () => m.remove();
+
+    q('#aj_save').onclick = () => {
+      const entry = { t: Date.now() };
+      const parts = [];
+      FIELDS.forEach(f => {
+        if (!(vals[f.k] > 0)) return;
+        // never subtract more than is logged, so a later add isn't hidden by a negative balance
+        const amt = round1(mode > 0 ? vals[f.k] : Math.min(vals[f.k], cur[f.k]));
+        if (!amt) return;
+        entry[f.k] = mode * amt;
+        parts.push(`${mode > 0 ? '+' : '−'}${amt}${f.k === 'cal' ? ' kcal' : 'g ' + f.k.toUpperCase()}`);
+      });
+      if (!parts.length) {
+        if (typeof toast === 'function') toast(isTh ? 'ยังไม่ได้ใส่ตัวเลข' : 'Enter a value first');
+        return;
       }
+      entry.label = parts.join(' · ');
+      if (!day.quickAdds) day.quickAdds = [];
+      day.quickAdds.push(entry);
+      save();
       m.remove();
-      if (typeof toast === 'function') toast(isTh ? 'รีเซ็ตยอดหมวดนี้เป็น 0 แล้ว' : 'Reset to 0');
+      if (typeof toast === 'function') toast(isTh ? `บันทึกแล้ว: ${entry.label}` : `Saved: ${entry.label}`);
       view();
     };
 
     document.body.appendChild(m);
+    refresh();
   }
 
   /* ---------- Macro Targets Customization Modal ---------- */
