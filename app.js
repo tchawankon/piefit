@@ -33,7 +33,7 @@ function loadState(){
   }
   if(!VENUE_EQ[SET.venue]) SET.venue = 'rings';
   SET.sfx = Object.assign({}, SET_DEFAULT.sfx, isObj(SET.sfx) ? SET.sfx : {});
-  Coach.load(); Body.load(); Yoga.load(); if(typeof Habits !== "undefined") Habits.load(); if(typeof Challenge !== "undefined") Challenge.load(); if(typeof Nutrition !== "undefined") Nutrition.load();
+  Coach.load(); Body.load(); Yoga.load(); Activity.load(); if(typeof Habits !== "undefined") Habits.load(); if(typeof Challenge !== "undefined") Challenge.load(); if(typeof Nutrition !== "undefined") Nutrition.load();
 }
 function persist(){
   store.set('log', LOG); store.set('mastered', MASTERED); store.set('news', NEWS);
@@ -100,6 +100,8 @@ function weekSets(){
     const x = EX[l.ex]; if(!x) return;
     x.p.forEach(m => out[m] += 1); x.s.forEach(m => out[m] += .5);
   });
+  // activities done outside the app (pilates, swimming, sports) count as equivalent sets
+  if(typeof Activity !== 'undefined') Object.entries(Activity.weekCredit()).forEach(([m, s]) => { if(m in out) out[m] += s; });
   return out;
 }
 const byNeed = wk => Object.keys(MUSCLES).sort((a, b) => wk[a]/target(a) - wk[b]/target(b));
@@ -107,7 +109,9 @@ const byNeed = wk => Object.keys(MUSCLES).sort((a, b) => wk[a]/target(a) - wk[b]
 function recentMuscles(){
   const cnt = {}, since = Date.now() - 48*3600e3;
   LOG.filter(l => l.t >= since && EX[l.ex]).forEach(l => EX[l.ex].p.forEach(m => cnt[m] = (cnt[m] || 0) + 1));
-  return new Set(Object.keys(cnt).filter(m => cnt[m] >= 2));
+  const out = new Set(Object.keys(cnt).filter(m => cnt[m] >= 2));
+  if(typeof Activity !== 'undefined') Activity.recentHard().forEach(m => out.add(m)); // only hard outside sessions
+  return out;
 }
 
 /* ================= progression (ring paths) ================= */
@@ -562,6 +566,7 @@ function homeView(){
   }
   app.innerHTML = `<div class="top"><div class="grow"><h1>PieFit</h1><p class="sub">${t('home_sub')}</p></div></div>
     ${typeof Habits !== "undefined" ? Habits.cardHTML() : ""}
+    ${Activity.homeCardHTML()}
     ${typeof Challenge !== "undefined" ? Challenge.homeBannerHTML() : ""}
     ${ACTIVE ? `<div class="card hl"><b>⏸ ${t('resume_title')}</b><br><small>${sessionName(ACTIVE.s)} · ${t('ex_of', Math.min(ACTIVE.i + 1, ACTIVE.list.length), ACTIVE.list.length)}</small>
       <div class="row" style="margin-top:10px"><button class="btn" id="resume">${t('resume')}</button><button class="btn ghost w-auto" id="discard">${t('discard')}</button></div></div>` : ''}
@@ -607,6 +612,7 @@ function homeView(){
   if($('#resume')) $('#resume').onclick = () => { Native.prepare(); if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
   if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };
   if(typeof Habits !== 'undefined') Habits.bindEvents(app);
+  Activity.bindHome(app);
   if(typeof Challenge !== 'undefined') Challenge.bindHomeBanner(app);
 }
 function lastDone(sid){
@@ -975,9 +981,9 @@ function detailView(){
 /* ================= progress ================= */
 let progSub = 'week';
 function progView(){
-  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['journey', (typeof SET !== 'undefined' && SET.lang === 'th' ? '🗺️ แผน 30 วัน & สถิติ' : '🗺️ 30-Day Program & Stats')], ['cal', SET.lang === 'th' ? '📅 ปฏิทิน' : '📅 Calendar'], ['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
+  app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['journey', (typeof SET !== 'undefined' && SET.lang === 'th' ? '🗺️ แผน 30 วัน & สถิติ' : '🗺️ 30-Day Program & Stats')], ['cal', SET.lang === 'th' ? '📅 ปฏิทิน' : '📅 Calendar'], ['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['act', SET.lang === 'th' ? '🏊 กิจกรรมอื่น' : '🏊 Other activities'], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
   on('[data-sub]', el => { progSub = el.dataset.sub; render(); });
-  ({journey:(box) => typeof Challenge !== 'undefined' ? Challenge.renderView(box) : null, cal:Calendar.view, week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, base:progBase})[progSub]($('#pbody'));
+  ({journey:(box) => typeof Challenge !== 'undefined' ? Challenge.renderView(box) : null, cal:Calendar.view, week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, act:Activity.view, base:progBase})[progSub]($('#pbody'));
 }
 function progWeek(box){
   const wk = weekSets(), since = Date.now() - 7*DAY, rec = recentMuscles();
@@ -992,6 +998,7 @@ function progWeek(box){
       <button class="chip mini" data-tm="${k}" data-d="-1">−</button><button class="chip mini" data-tm="${k}" data-d="1">+</button></div>
       ${TG.custom[k] != null ? `<small class="cust">${t('custom_rec', recommended(k))}</small>` : ''}`).join('') +
     `<small>${t('count_note')}</small>
+     ${(() => { const c = Activity.weekCredit(), ks = Object.keys(c).filter(m => MUSCLES[m]); return ks.length ? `<small style="display:block;margin-top:6px">🏊 ${SET.lang === 'th' ? 'รวมเซ็ตเทียบเท่าจากกิจกรรมอื่นแล้ว: ' : 'Includes equivalent sets from other activities: '}${ks.map(m => M(m) + ' ' + c[m]).join(' · ')}</small>` : ''; })()}
      <button class="btn ghost" id="resett" style="margin-top:10px">${t('reset_targets')}</button></div>
     <small class="note">${t('target_disclaimer')}</small>`;
   on('[data-gt]', el => { TG.type = el.dataset.gt; persist(); render(); });
@@ -1027,6 +1034,7 @@ function progBase(box){
 function moreView(){
   app.innerHTML = `<h1>${t('tab_more')}</h1>
     <div class="card sess row" id="go_yoga"><span class="emoji">🧘</span><div class="grow"><b>${t('tab_yoga')}</b><br><small>${SET.lang === 'th' ? 'โยคะ ยืดเหยียด และคลาสออกกำลังกายตามวิดีโอ' : 'Yoga, stretching and follow-along classes'}</small></div><span class="go">›</span></div>
+    <div class="card sess row" id="go_act"><span class="emoji">🏊</span><div class="grow"><b>${SET.lang === 'th' ? 'กิจกรรมอื่นๆ' : 'Other activities'}</b><br><small>${SET.lang === 'th' ? 'บันทึกพิลาทิส ว่ายน้ำ กีฬา คลาสข้างนอก และดูประวัติ' : 'Log pilates, swimming, sports, outside classes, and see history'}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="plan"><span class="emoji">📅</span><div class="grow"><b>${t('pl_title')}</b><br><small>${t('pl_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="profile"><span class="emoji">🩹</span><div class="grow"><b>${t('pf_title')}</b><br><small>${t('pf_sub')}</small></div><span class="go">›</span></div>
     <div class="card sess row" data-v="coach"><span class="emoji">🤖</span><div class="grow"><b>${t('ai_title')}</b><br><small>${Coach.AI.ready() ? t('ai_sub_on') : t('ai_sub_off')}</small></div><span class="go">›</span></div>
@@ -1045,6 +1053,7 @@ function moreView(){
   on('[data-v]', el => go('more', {name:el.dataset.v}));
   $('#go_yoga').onclick = () => go('yoga');
   $('#go_lib').onclick = () => go('lib');
+  $('#go_act').onclick = () => { progSub = 'act'; go('prog'); };
   $('#exp').onclick = exportData;
   $('#imp').onclick = () => $('#impf').click();
   $('#impf').onchange = e => { if(e.target.files[0]) importData(e.target.files[0]); };
@@ -1139,13 +1148,13 @@ function settingsView(){
   $('#wipe').onclick = () => {
     if(!confirm(t('clear_confirm'))) return;
     LOG = []; MASTERED = {}; NEWS = []; CAL = {}; ACTIVE = null; store.set('active', null);
-    Coach.importState({checks:[], goals:[]}); Body.entries = []; store.set('chat', []); Yoga.clear();
+    Coach.importState({checks:[], goals:[]}); Body.entries = []; store.set('chat', []); Yoga.clear(); Activity.clear();
     try { indexedDB.deleteDatabase('piefit'); } catch(e){}
     persist(); toast(t('cleared')); render();
   };
 }
 function exportData(){
-  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries, bodyGoal:Body.goal}, Coach.exportState(), Yoga.exportState(), typeof Habits !== "undefined" ? {habits:Habits.cfg, habitsLogs:Habits.logs, inbody:Habits.inbodyHistory} : {}, typeof Challenge !== "undefined" ? {challenge:Challenge.state} : {}, typeof Nutrition !== "undefined" ? {nutrition:Nutrition.exportState()} : {});
+  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries, bodyGoal:Body.goal}, Coach.exportState(), Yoga.exportState(), Activity.exportState(), typeof Habits !== "undefined" ? {habits:Habits.cfg, habitsLogs:Habits.logs, inbody:Habits.inbodyHistory} : {}, typeof Challenge !== "undefined" ? {challenge:Challenge.state} : {}, typeof Nutrition !== "undefined" ? {nutrition:Nutrition.exportState()} : {});
   const name = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => alert(t('export_fail'))); return; }
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
@@ -1164,7 +1173,7 @@ function importData(file){
     LOG = d.log.filter(l => l && typeof l.ex === 'string' && typeof l.t === 'number' && typeof l.reps === 'number')
       .map((l, i) => { const o = {id: typeof l.id === 'string' ? l.id : l.t + '-' + i, t:l.t, sess:String(l.sess || ''), ex:l.ex, reps:l.reps};
         if(typeof l.w === 'number') o.w = l.w; if(l.cal) o.cal = true; if([1, 2, 3, 4].includes(l.rpe)) o.rpe = l.rpe; return o; });
-    Coach.importState(d); Yoga.importState(d); if(d.habits) store.set('habits_cfg', d.habits); if(d.habitsLogs) store.set('habits_logs', d.habitsLogs); if(d.inbody) store.set('habits_inbody', d.inbody); if(d.challenge) { store.set('challenge_state_v4', d.challenge); } if(d.nutrition && typeof Nutrition !== 'undefined') Nutrition.importState(d.nutrition); if(typeof Habits !== 'undefined') Habits.load(); if(typeof Challenge !== 'undefined') Challenge.load(); if(typeof Nutrition !== 'undefined') Nutrition.load();
+    Coach.importState(d); Yoga.importState(d); Activity.importState(d); if(d.habits) store.set('habits_cfg', d.habits); if(d.habitsLogs) store.set('habits_logs', d.habitsLogs); if(d.inbody) store.set('habits_inbody', d.inbody); if(d.challenge) { store.set('challenge_state_v4', d.challenge); } if(d.nutrition && typeof Nutrition !== 'undefined') Nutrition.importState(d.nutrition); if(typeof Habits !== 'undefined') Habits.load(); if(typeof Challenge !== 'undefined') Challenge.load(); if(typeof Nutrition !== 'undefined') Nutrition.load();
     if(Array.isArray(d.body)) Body.entries = d.body.filter(e => isObj(e) && typeof e.t === 'number');
     Body.goal = typeof d.bodyGoal === 'number' ? d.bodyGoal : null; if(typeof Habits !== 'undefined') Habits.onWeight();
     MASTERED = isObj(d.mastered) ? d.mastered : {};

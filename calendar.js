@@ -1,6 +1,6 @@
 'use strict';
 /* PieFit Calendar: a month view of everything logged per day (strength sets, yoga, habits, food).
-   Read-only: it reads LOG, Yoga, Habits and Nutrition and stores nothing of its own.
+   Read-only: it reads LOG, Yoga, Activity, Habits and Nutrition and stores nothing of its own.
    Loaded after nutrition.js and before app.js; rendered as a Progress sub-tab via Calendar.view(box). */
 const Calendar = (() => {
   let monthOffset = 0;   // 0 = this month, -1 = last month
@@ -8,7 +8,7 @@ const Calendar = (() => {
 
   const pad = n => String(n).padStart(2, '0');
   const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const COLORS = { lift: 'var(--accent)', yoga: '#1098ad', habit: 'var(--ok)', food: '#fbbf24', weight: '#a855f7' };
+  const COLORS = { lift: 'var(--accent)', yoga: '#1098ad', habit: 'var(--ok)', food: '#fbbf24', weight: '#a855f7', act: '#f97316' };
 
   function sessLabel(id, isTh) {
     const s = (typeof SESSIONS !== 'undefined') ? SESSIONS.find(x => x.id === id) : null;
@@ -20,7 +20,7 @@ const Calendar = (() => {
   // Everything logged inside one month, indexed by date key
   function collect(first, last) {
     const days = {};
-    const day = k => days[k] || (days[k] = { sets: [], yoga: [], habits: 0, food: null, weight: null, waist: null });
+    const day = k => days[k] || (days[k] = { sets: [], yoga: [], act: [], habits: 0, food: null, weight: null, waist: null });
     const from = first.getTime(), to = last.getTime() + 86400000;
 
     (typeof LOG !== 'undefined' ? LOG : []).forEach(l => {
@@ -29,6 +29,9 @@ const Calendar = (() => {
     const ylog = (typeof Yoga !== 'undefined' && Yoga.log) ? Yoga.log : [];
     ylog.forEach(y => {
       if (y.t >= from && y.t < to) day(keyOf(new Date(y.t))).yoga.push(y);
+    });
+    ((typeof Activity !== 'undefined') ? Activity.log : []).forEach(a => {
+      if (a.t >= from && a.t < to) day(keyOf(new Date(a.t))).act.push(a);
     });
     ((typeof Body !== 'undefined' && Body.entries) ? Body.entries : []).slice().sort((a, b) => a.t - b.t).forEach(e => {
       if (e.t < from || e.t >= to) return;
@@ -64,6 +67,7 @@ const Calendar = (() => {
 
     const liftDays = Object.values(data).filter(d => d.sets.length).length;
     const yogaDays = Object.values(data).filter(d => d.yoga.length).length;
+    const actDays = Object.values(data).filter(d => d.act.length).length;
     const habitDays = Object.values(data).filter(d => d.habits >= 3).length;
     const foodDays = Object.values(data).filter(d => d.food).length;
     const wList = Object.keys(data).sort().map(k => data[k].weight).filter(v => v != null);
@@ -77,7 +81,7 @@ const Calendar = (() => {
       const d = data[k];
       const future = k > todayKey;
       const dots = d ? [
-        d.sets.length ? COLORS.lift : '', d.yoga.length ? COLORS.yoga : '',
+        d.sets.length ? COLORS.lift : '', d.yoga.length ? COLORS.yoga : '', d.act.length ? COLORS.act : '',
         d.habits >= 3 ? COLORS.habit : '', d.food ? COLORS.food : '', d.weight != null ? COLORS.weight : ''
       ].filter(Boolean).map(c => `<i style="background:${c}"></i>`).join('') : '';
       cells += `<button class="cal-day${k === todayKey ? ' today' : ''}${k === selected ? ' sel' : ''}${d && d.sets.length ? ' lift' : ''}" data-day="${k}" ${future ? 'disabled' : ''} aria-label="${k}">
@@ -108,6 +112,7 @@ const Calendar = (() => {
       <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <span class="chip p">🏋️ ${liftDays} ${isTh ? 'วันซ้อม' : 'training days'}</span>
         <span class="chip">🧘 ${yogaDays} ${isTh ? 'วันโยคะ' : 'yoga days'}</span>
+        ${actDays ? `<span class="chip">🏊 ${actDays} ${isTh ? 'วันกิจกรรมอื่น' : 'activity days'}</span>` : ''}
         <span class="chip">✓ ${habitDays} ${isTh ? 'วัน habit ครบ' : 'habit days'}</span>
         <span class="chip">${setCount} ${isTh ? 'เซ็ต' : 'sets'}</span>
         ${wDiff != null ? `<span class="chip">⚖️ ${wDiff > 0 ? '+' : ''}${wDiff} kg</span>` : ''}
@@ -118,6 +123,7 @@ const Calendar = (() => {
         <div class="cal-leg">
           <span><i style="background:${COLORS.lift}"></i>${isTh ? 'ซ้อมเวท/ห่วง' : 'Strength'}</span>
           <span><i style="background:${COLORS.yoga}"></i>${isTh ? 'โยคะ' : 'Yoga'}</span>
+          <span><i style="background:${COLORS.act}"></i>${isTh ? 'กิจกรรมอื่น' : 'Other activity'}</span>
           <span><i style="background:${COLORS.habit}"></i>${isTh ? 'habit ≥ 3' : 'Habits ≥ 3'}</span>
           <span><i style="background:${COLORS.food}"></i>${isTh ? 'บันทึกอาหาร' : 'Food logged'}</span>
           <span><i style="background:${COLORS.weight}"></i>${isTh ? 'ชั่งน้ำหนัก' : 'Weight'}</span>
@@ -153,6 +159,11 @@ const Calendar = (() => {
     if (d && d.yoga.length) {
       const min = Math.round(d.yoga.reduce((s, y2) => s + (y2.min || 0), 0));
       parts.push(`<div style="margin-top:8px"><b>🧘 ${isTh ? 'โยคะ / ยืดเหยียด' : 'Yoga / stretching'}</b> <small>· ${d.yoga.length} ${isTh ? 'ครั้ง' : 'sessions'} · ${min} ${isTh ? 'นาที' : 'min'}</small></div>`);
+    }
+    if (d && d.act.length) {
+      const kc = d.act.reduce((s, a) => s + a.kcal, 0);
+      parts.push(`<div style="margin-top:8px"><b>🏊 ${isTh ? 'กิจกรรมอื่น' : 'Other activities'}</b> <small>· ${kc} kcal</small>
+        ${d.act.map(a => `<div class="setrow" style="font-size:13px"><span class="grow">${Activity.label(a)}</span><b>${a.min} ${isTh ? 'นาที' : 'min'}</b></div>`).join('')}</div>`);
     }
     if (d && d.habits > 0) {
       parts.push(`<div style="margin-top:8px"><b>📋 Habits</b> <small>· ${d.habits}/5 ${isTh ? 'ข้อ' : 'done'}</small></div>`);

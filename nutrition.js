@@ -188,6 +188,7 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
             <span class="grow" style="text-align:right"><b>${totals.cal.toLocaleString()}</b> / ${targets.cal.toLocaleString()} kcal (${calPct}%)</span>
           </div>
           <div class="track" style="height:10px"><div class="fill ${calPct >= 100 ? 'warn' : ''}" style="width:${calPct}%;background:${totals.cal > targets.cal + 200 ? 'var(--warn)' : 'var(--accent)'}"></div></div>
+          ${(typeof Activity !== 'undefined' && Activity.dayKcal(curDate) > 0) ? `<small style="display:block;margin-top:6px;color:var(--mute)">🏊 ${isTh ? 'เผาผลาญจากกิจกรรมอื่น' : 'Burned in other activities'} ≈ ${Activity.dayKcal(curDate)} kcal · ${isTh ? 'ไม่ได้บวกเข้าเป้า (TDEE รวมระดับการออกกำลังกายไว้แล้ว)' : 'not added to the target (your TDEE already includes activity)'}</small>` : ''}
           <div class="row" style="gap:8px;margin-top:10px">
             <button class="chip" data-adj="cal" data-sign="-" style="width:48px;min-height:40px;font-size:20px;color:var(--warn);flex:none" aria-label="${isTh ? 'ลดแคลอรี่' : 'Subtract calories'}">−</button>
             <button class="chip" data-adj="all" data-sign="+" style="flex:1;min-height:40px;font-size:13px;color:var(--accent);border-color:var(--accent)">⚡ ${isTh ? 'เพิ่มด่วน / ปรับละเอียด' : 'Quick add / fine adjust'}</button>

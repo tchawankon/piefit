@@ -145,29 +145,42 @@ const Habits = (() => {
     store.set(KEY_INBODY, INBODY_HIST);
   }
 
+  const blankLog = () => ({
+    workout: false,
+    workoutMode: 'full', // 'full' | 'low'
+    water: 0,
+    proteinDone: false,
+    proteinGrams: 0,
+    sleepHours: CFG.sleepTarget || 7.5,
+    sleepDone: false,
+    steps: 0,
+    stepsDone: false
+  });
+
+  // The one rule for auto-ticking "workout" on a day: sets logged in PieFit, or an activity logged outside the app.
+  // A manual un-tick (workoutOff) always wins. Returns true when it changed the log.
+  function autoWorkout(k) {
+    const strength = typeof LOG !== 'undefined' && Array.isArray(LOG) && LOG.some(l => dateKey(new Date(l.t)) === k);
+    const actMode = typeof Activity !== 'undefined' ? Activity.dayMode(k) : null;
+    if (!strength && !actMode) return false;
+    const log = LOGS[k] || (k <= todayIso() ? (LOGS[k] = blankLog()) : null);
+    if (!log || log.workoutOff) return false;
+    const mode = strength ? 'full' : actMode; // strength in the app counts as full, as before
+    if (log.workout) {
+      // an auto tick may move up from quick to full when a bigger session is logged; a manual choice stays
+      if (!log.workoutAuto || log.workoutMode === 'full' || mode !== 'full') return false;
+      log.workoutMode = 'full';
+    } else {
+      log.workout = true; log.workoutMode = mode; log.workoutAuto = true;
+    }
+    save();
+    return true;
+  }
+
   function getToday() {
     const k = todayIso();
-    if (!LOGS[k]) {
-      LOGS[k] = {
-        workout: false,
-        workoutMode: 'full', // 'full' | 'low'
-        water: 0,
-        proteinDone: false,
-        proteinGrams: 0,
-        sleepHours: CFG.sleepTarget || 7.5,
-        sleepDone: false,
-        steps: 0,
-        stepsDone: false
-      };
-    }
-    // Auto-detect workout from PieFit LOG if not already checked
-    if (typeof LOG !== 'undefined' && Array.isArray(LOG) && typeof dayKey === 'function') {
-      const todayStr = dayKey(Date.now());
-      const hasTrained = LOG.some(l => dayKey(l.t) === todayStr);
-      if (hasTrained && !LOGS[k].workout && !LOGS[k].workoutOff) {
-        LOGS[k].workout = true;
-      }
-    }
+    if (!LOGS[k]) LOGS[k] = blankLog();
+    autoWorkout(k);
     return LOGS[k];
   }
 
@@ -342,6 +355,7 @@ const Habits = (() => {
     const toggleWo = () => {
       tlog.workout = !tlog.workout;
       tlog.workoutOff = !tlog.workout; // stops the auto-detect from re-ticking a manual un-tick
+      tlog.workoutAuto = false;
       save();
       rerender();
     };
@@ -353,7 +367,7 @@ const Habits = (() => {
     const modeWo = el.querySelector('#hb_mode_wo');
     if (modeWo) modeWo.onclick = () => {
       tlog.workoutMode = (tlog.workoutMode === 'low') ? 'full' : 'low';
-      tlog.workout = true; tlog.workoutOff = false;
+      tlog.workout = true; tlog.workoutOff = false; tlog.workoutAuto = false;
       save();
       rerender();
     };
@@ -758,6 +772,7 @@ const Habits = (() => {
     save,
     syncProtein,
     onWeight,
+    autoWorkout,
     doneCount: key => doneCountOf(LOGS[key]),
     cardHTML,
     bindEvents,

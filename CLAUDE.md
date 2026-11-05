@@ -5,9 +5,9 @@ Vanilla JS (ES6+), no framework, no build step, no runtime dependencies. Keep it
 
 ## Architecture
 
-- Classic `<script>` tags in `index.html`, loaded in this order: native, data, i18n, i18n-trainer, sound, coach, body, form, videos, yoga, habits, challenge, nutrition-data, nutrition-ai, nutrition, calendar, app.
+- Classic `<script>` tags in `index.html`, loaded in this order: native, data, i18n, i18n-trainer, sound, coach, body, form, videos, yoga, activity, habits, challenge, nutrition-data, nutrition-ai, nutrition, calendar, app.
   A module that another one needs must load before it.
-- Each feature is an IIFE exposing one global (`Habits`, `Challenge`, `Nutrition`, `Coach`, `Body`, `Yoga`). `app.js` wires them in.
+- Each feature is an IIFE exposing one global (`Habits`, `Challenge`, `Nutrition`, `Coach`, `Body`, `Yoga`, `Activity`). `app.js` wires them in.
 - Globals available to every module: `store`, `t(key, ...args)`, `esc`, `EX`, `LOG`, `LADDERS`, `MASTERED`, `SET`, `TG`, `CAL`, `go(tab, view)`, `render()`, `persist()`, `toast`, `app`.
 - Routing: `go(tab, view)` then `render()`. The bottom nav has 4 tabs (home, food, prog, more). Yoga and the exercise library (`lib`) live under More; keep the nav at 5 or fewer so it fits a 360px screen.
 - Storage: `store.get(k, default)` / `store.set(k, value)` (localStorage). Never touch `localStorage` directly in feature code.
@@ -20,6 +20,7 @@ Vanilla JS (ES6+), no framework, no build step, no runtime dependencies. Keep it
 |---|---|
 | Habits | `habits_cfg`, `habits_logs`, `habits_inbody` |
 | Body | `body` (weigh-ins), `body_goal` (target weight, kg) |
+| Activity (outside workouts) | `activity_log_v1` |
 | Challenge | `challenge_state_v4` |
 | Nutrition | `nutrition_days_v1`, `nutrition_my_foods_v1`, `nutrition_custom_targets_v1` |
 | AI keys | `aikey` (Claude key, shared with the coach), `nutri_key` (Food tab), `gemini_key` (legacy) |
