@@ -1,60 +1,49 @@
-# PieFit: project rules for Claude
+# PieFit: instructions for Claude
 
-PieFit is an offline-first PWA for rings, TRX, bodyweight and gym training, plus yoga, habits, a 30-day challenge and nutrition.
-Vanilla JS (ES6+), no framework, no build step, no runtime dependencies. Keep it that way.
+This file is the single source of AI instructions. It imports the long-term memory:
 
-## Architecture
+@docs/CORE-CONTEXT.md
 
-- Classic `<script>` tags in `index.html`, loaded in this order: native, data, i18n, i18n-trainer, sound, coach, body, form, videos, yoga, activity, habits, challenge, nutrition-data, nutrition-ai, nutrition, calendar, app.
-  A module that another one needs must load before it.
-- Each feature is an IIFE exposing one global (`Habits`, `Challenge`, `Nutrition`, `Coach`, `Body`, `Yoga`, `Activity`). `app.js` wires them in.
-- Globals available to every module: `store`, `t(key, ...args)`, `esc`, `EX`, `LOG`, `LADDERS`, `MASTERED`, `SET`, `TG`, `CAL`, `go(tab, view)`, `render()`, `persist()`, `toast`, `app`.
-- Routing: `go(tab, view)` then `render()`. The bottom nav has 4 tabs (home, food, prog, more). Yoga and the exercise library (`lib`) live under More; keep the nav at 5 or fewer so it fits a 360px screen.
-- Storage: `store.get(k, default)` / `store.set(k, value)` (localStorage). Never touch `localStorage` directly in feature code.
-- CSS: variables and classes already in `index.html` (`--bg --card --ink --mute --line --accent --ok --warn --soft`; `.card .row .seg .chip .btn .tag .num .inp .track .modal .sheet`). Reuse them before adding styles.
-- Service worker `sw.js`: every new file must be added to `FILES`, and `VERSION` bumped, or the offline cache goes stale.
+## Start of every session (mandatory, nothing else)
 
-## Storage keys (do not rename without a migration)
+1. This file + `docs/CORE-CONTEXT.md` (both loaded automatically).
+2. The `whats-next` output. The SessionStart hook runs it; if it is not in context, run `node tools/whats-next.js`.
+3. Reconcile: trust `whats-next` (git, ship log, checks) over any prose. Never infer status from prose; status lives only on `STATUS:` lines in `CURRENT-SPRINT.md`.
 
-| Module | Keys |
+Before answering "what next", run `node tools/whats-next.js` first. Always. Do not propose work whose STATUS is already `live`. Priority is the owner's call.
+
+## Read on demand only
+
+| Need | Read |
 |---|---|
-| Habits | `habits_cfg`, `habits_logs`, `habits_inbody` |
-| Body | `body` (weigh-ins), `body_goal` (target weight, kg) |
-| Activity (outside workouts) | `activity_log_v1` |
-| Challenge | `challenge_state_v4` |
-| Nutrition | `nutrition_days_v1`, `nutrition_my_foods_v1`, `nutrition_custom_targets_v1` |
-| AI keys | `aikey` (Claude key, shared with the coach), `nutri_key` (Food tab), `gemini_key` (legacy) |
+| One task | `grep -n -A8 "^### <words>" CURRENT-SPRINT.md` (never the whole file if it is long) |
+| Editing anything that touches several files | `docs/reference/MAP-HUB.md`, then the one map it points to |
+| Any other doc | `docs/README.md` (index) first, then that one doc |
+| History, decisions, incidents | `grep -n "<words>" ARCHIVE-LOG.md`, then a line range. Never read it whole |
+| Full rule text | `docs/reference/IRON-RULES-DETAIL.md` (grep the rule number) |
 
-Anything new that stores user data must also be added to `exportData()` / `importData()` in `app.js`, and the export and import field names must match.
+Token rules: prefer grep and line ranges over full reads of big files (`nutrition.js`, `app.js`, `challenge.js`, `habits.js` are 800-1,300 lines). Notes are written in English; questions to the owner are in Thai.
 
-## Rules every change must follow
+## Commands
 
-1. **No `prompt()`, `alert()` or new `confirm()`.** Use a `.modal` + `.sheet` with buttons. Show copyable text in a textarea sheet.
-2. **Escape before `innerHTML`.** Anything the user typed, or an AI returned, goes through `esc()` (inside `nutrition*.js` use `escH`).
-3. **Both languages.** Every visible string needs Thai and English (`t()` for shared strings, `isTh ? '…' : '…'` inline in a module).
-4. **Phone first.** Check at 360px wide: no horizontal scroll, tap targets at least 40px, rows that can overflow get `flex-wrap:wrap`.
-5. **Offline first.** Nothing may be required from the network except optional AI calls, and those must fail with a clear message.
-6. **No duplicated rules.** One function decides "is this habit done" or "what is the target"; the UI, the streak and any sync call it. Do not copy a data schema into another module; add a small API on the owning module instead (example: `Habits.syncProtein`).
-7. **Rebinding is fine, leaking is not.** Handlers are set with `onclick =` on freshly rendered nodes. Do not add `addEventListener` on `document` / `window` from inside a view without removing it.
-8. **Validate before shipping:** `node --check` on every changed `.js`, then open the page at 360px and exercise the change. Do not report a UI change as working without doing the second step.
+| Command | What |
+|---|---|
+| `node tools/whats-next.js` | reconcile report, always exits 0 |
+| `npm run preflight` | `node --check` every `.js` + `map-check` + `sprint-check`. Must be green before commit or ship |
+| `node tools/map-check.js` | multi-touchpoint facts (see MAP-HUB) |
+| `node tools/sprint-check.js` | CURRENT-SPRINT format and VERIFY probes |
+| `node tools/ship.js` | preflight, push `main`, wait until Pages serves the new `sw.js` VERSION, log to `SHIP-LOG.txt`. Owner approval required |
 
-## AI calls
+## Working rules
 
-- Claude: model `claude-haiku-5-5`, SDK `https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.133.0/+esm` with `dangerouslyAllowBrowser: true`. Same as `coach.js`; keep them in step.
-- Gemini: key goes in the `x-goog-api-key` header, never in the URL. Use model ids that exist (`gemini-2.5-flash` and similar); do not invent ids.
-- A key saved in one feature must never overwrite or clear a key owned by another.
-- Check any model id or API field against the existing working code or current docs before using it.
+- Feature branch per task; merge to `main` (= deploy) only when the owner says so. Commits end with the Co-Authored-By line given by the session.
+- Always ask first: push, merge into `main`, `gh workflow run`, branch deletion, any edit in an ask-first zone (CORE-CONTEXT).
+- Code is the source of truth; when a doc disagrees, fix the doc in the same change.
+- New docs go into `docs/plans|guides|reference/` and get a line in `docs/README.md` (no orphan docs).
 
-## Working with outside prototypes
+## Maintenance (part of every task, not optional)
 
-The owner may prototype ideas elsewhere (another AI tool, a quick page) and bring them here. The workflow:
-
-1. Treat the prototype as a **spec and a look-and-feel reference**, not code to paste in.
-2. Ask for (or extract) four things: the goal in a few sentences, the data to store, what the user does on each screen, and what they liked or disliked in the prototype.
-3. Rewrite it here following the rules above. Do not review-and-patch a large foreign file; it costs more and misses the integration bugs (backup, storage keys, offline cache, shared keys).
-4. If something in the prototype calls an external API, get a real sample request and response first.
-
-## Git
-
-- Work on a feature branch, merge to `main` only when the owner says so.
-- Commits end with the Co-Authored-By line given by the session.
+- End of task: update the entry's `STATUS` / `OPEN` / `VERIFY` in `CURRENT-SPRINT.md`. `live` + `OPEN: nothing` means move the write-up to `ARCHIVE-LOG.md` and delete the entry in the same session.
+- Touched a multi-touchpoint area: update the map and its `map-check` check in the same change. Write intent freely in maps; write counts or lists only if a script checks them.
+- A mistake happened: add an Iron Rule (next unused number) with its WHY to CORE-CONTEXT. The same rule forgotten twice: turn it into a `map-check` check or a hook.
+- Lowered a baseline count (removed a legacy `confirm()` etc.): run `node tools/map-check.js --write-baseline`.
