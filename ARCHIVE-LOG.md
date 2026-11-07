@@ -71,3 +71,6 @@ Branch `fix/data-and-cleanup` (`d9a57dc`), merged as `9a83fc7`, shipped OK with 
 8. Rewrote README; the privacy text now mentions the AI providers.
 Also: defined the missing `--warn` CSS variable (see the incident above).
 Tested at 360px: import of an old and a broken backup, delete-all with and without the key option, Food key removal, the edit-set sheet, the delete-set sheet. Not tested: a real user backup file.
+
+## 2026-11-07 · done · Android APK apk-7 (PieFit Android 1.0.7)
+Built from `main` at `933f2f9` by the owner's request (run 42332908050, success). It includes the data safety batch (sw `piefit-v34`). Release: https://github.com/tchawankon/piefit/releases/tag/apk-7 (PieFit.apk, 3.7 MB).
