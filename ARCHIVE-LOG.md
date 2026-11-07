@@ -58,3 +58,16 @@ Merged `chore/project-brain` (`e583a19`) into main as `6ea518b` and shipped (SHI
 - Found while testing the new delete-all sheet at 360px.
 - Fix: defined `--warn` in the light and both dark theme blocks.
 - Lesson: the docs listed a token that the code didn't have. Code is the source of truth.
+
+## 2026-11-07 · done · Data safety and cleanup batch (8 audit items)
+Branch `fix/data-and-cleanup` (`d9a57dc`), merged as `9a83fc7`, shipped OK with sw `piefit-v34` (SHIP-LOG 2026-11-07T03:08Z). The owner's decisions are in brackets.
+1. `yfeel` is now exported and imported.
+2. Importing an old backup without `bodyGoal` keeps the current goal.
+3. Delete all data now clears every module, with an "also remove AI keys" checkbox. [owner: let the user choose]
+4. Habits and Challenge imports go through type-checked `importState`; Nutrition import filters bad entries.
+5. Removing a key in Food or the coach clears every AI key slot via `clearAiKeys()`. [owner: keys are shared; removed means all removed]
+6. All `prompt`/`alert`/`confirm` calls are replaced by `confirmSheet`/`numSheet`/`noticeSheet`. The baseline is now 0.
+7. Removed the 14 own-module typeof guards in app.js.
+8. Rewrote README; the privacy text now mentions the AI providers.
+Also: defined the missing `--warn` CSS variable (see the incident above).
+Tested at 360px: import of an old and a broken backup, delete-all with and without the key option, Food key removal, the edit-set sheet, the delete-set sheet. Not tested: a real user backup file.

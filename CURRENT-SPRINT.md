@@ -15,7 +15,3 @@ Rules:
 
 ## Entries
 
-### Data safety and cleanup batch (8 audit items)
-STATUS: code-complete · 2026-11-07 · branch fix/data-and-cleanup, preflight green
-OPEN: test at 360px, owner OK, then merge and ship
-VERIFY: contains yoga.js :: yfeel:YFEEL ; lacks app.js :: Body.goal = typeof d.bodyGoal === 'number' ? d.bodyGoal : null ; contains app.js :: Habits.clear(); Challenge.clear(); Nutrition.clear(); ; contains app.js :: Habits.importState(d) ; contains nutrition.js :: clearAiKeys(); ; lacks app.js :: prompt(label, cur) ; lacks app.js :: typeof Habits !== ; lacks README.md :: Nothing is sent to a server
