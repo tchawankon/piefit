@@ -605,14 +605,14 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
       const rBtn = box.querySelector('#ch_reset_btn');
       if (rBtn) {
         rBtn.onclick = () => {
-          if (confirm(isTh ? 'ต้องการเริ่ม 30-Day Challenge รอบใหม่หรือไม่?' : 'Restart 30-Day Journey?')) {
+          confirmSheet(isTh ? 'ต้องการเริ่ม 30-Day Challenge รอบใหม่หรือไม่?' : 'Restart 30-Day Journey?', () => {
             STATE.startDate = Date.now();
             STATE.days = {};
             delete STATE.launched;
             save();
             renderModal();
             if (typeof render === 'function') render();
-          }
+          });
         };
       }
 
@@ -897,9 +897,27 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
     }
   }
 
+  // Backup field: challenge. Only the known shape is accepted; absent field keeps the current run.
+  function exportState() { return { challenge: STATE }; }
+  function importState(d) {
+    const s = d && d.challenge;
+    if (!s || typeof s !== 'object' || Array.isArray(s)) return;
+    const days = {};
+    if (s.days && typeof s.days === 'object') Object.entries(s.days).forEach(([k, v]) => {
+      if (+k >= 1 && +k <= 30 && v && typeof v === 'object' && ['full', 'low', 'rest'].includes(v.status))
+        days[k] = { status: v.status, date: String(v.date || ''), note: String(v.note || '') };
+    });
+    STATE = { startDate: typeof s.startDate === 'number' ? s.startDate : Date.now(), days };
+    save(); load();
+  }
+  function clear() { STATE = { startDate: Date.now(), days: {} }; save(); }
+
   return {
     load,
     save,
+    exportState,
+    importState,
+    clear,
     homeBannerHTML,
     bindHomeBanner,
     openJourneyModal,

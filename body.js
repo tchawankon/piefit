@@ -129,7 +129,7 @@ const Body = (() => {
       addEntry({weight:w, waist:wa}); toast(t('bd_saved')); render();
     };
     box.querySelector('#bgoalsave').onclick = () => { setGoal(parseFloat(box.querySelector('#bgoal').value)); toast(t('bd_saved')); render(); };
-    box.querySelectorAll('[data-bdel]').forEach(b => b.onclick = () => { if(confirm(t('del_confirm'))){ removeEntry(+b.dataset.bdel); render(); } });
+    box.querySelectorAll('[data-bdel]').forEach(b => b.onclick = () => { confirmSheet(t('del_confirm'), () => { removeEntry(+b.dataset.bdel); render(); }, {yes:t('remove'), danger:true}); });
     box.querySelector('#bph').onchange = async e => {
       const f = e.target.files[0]; if(!f) return;
       try { await addPhoto(f); toast(t('bd_photo_saved')); } catch(err){ toast(t('bd_photo_fail')); }
@@ -145,7 +145,7 @@ const Body = (() => {
         ${b == null ? `<button class="btn ghost" data-del style="margin-top:10px">🗑 ${t('remove')}</button>` : ''}<button class="btn" data-x style="margin-top:8px">${t('done')}</button></div>`;
       document.body.appendChild(o);
       o.querySelector('[data-x]').onclick = () => o.remove();
-      const d = o.querySelector('[data-del]'); if(d) d.onclick = async () => { if(confirm(t('del_confirm'))){ await delPhoto(photos[a].id); o.remove(); render(); } };
+      const d = o.querySelector('[data-del]'); if(d) d.onclick = async () => { confirmSheet(t('del_confirm'), async () => { await delPhoto(photos[a].id); o.remove(); render(); }, {yes:t('remove'), danger:true}); };
     };
     let picking = null;
     grid.querySelectorAll('[data-ph]').forEach(f => f.onclick = () => {

@@ -2,6 +2,7 @@
 /* PieFit translations. STR = UI strings, EXTH = Thai exercise instructions, LADTH = Thai path titles. */
 const STR = {en:{
   tab_home:'Home', tab_food:'Food', tab_lib:'Exercises', tab_prog:'Progress', tab_more:'More',
+  ok:'OK', wipe_keys:'Also remove saved AI keys (coach and Food tab)',
   home_sub:'Rings, TRX & gym workout tracker', back:'Back', done:'Done', start:'Start workout', next:'Next', prev:'Prev', finish:'Finish',
   m_chest:'Chest', m_shoulders:'Shoulders', m_triceps:'Triceps', m_lats:'Lats', m_upperback:'Upper back', m_biceps:'Biceps',
   m_core:'Core', m_glutes:'Glutes', m_quads:'Quads', m_hamstrings:'Hamstrings', m_calves:'Calves',
@@ -74,7 +75,7 @@ const STR = {en:{
   exp_note:'Changes the recommended weekly sets.', ring_mode:'Ring progression', guided:'Guided', free:'Free',
   guided_note:'Ring sessions only give you exercises you have unlocked.', free_note:'Every exercise is available, no gating.',
   rest_alert:'Rest timer alert', on:'On', off:'Off', rest_note:'Sound and vibration when rest is over. Rest length depends on the exercise (60s-2.5min).',
-  danger:'Data', clear_all:'Delete all data', clear_confirm:'Delete all sets, tests and progression? This cannot be undone. Export a backup first if unsure.',
+  danger:'Data', clear_all:'Delete all data', clear_confirm:'Delete all data on this device: workouts, tests, progression, yoga, activities, habits, challenge, food log, weight and photos? This cannot be undone. Export a backup first if unsure.',
   cleared:'All data deleted', offline_note:'works offline, data stays on this device',
   news_mastered:'🎉 {0} mastered', news_unlocked:'unlocked: {0}',
   guide_html:`<div class="card"><h3>Start here</h3><ul class="cues">
@@ -97,6 +98,7 @@ const STR = {en:{
     <li>Sharp joint pain (shoulder, elbow, wrist) = stop and go easier. Muscle burn is fine</li></ul></div>
   <div class="card"><small>These are general guidelines, not medical advice. Adjust to how you feel.</small></div>`
 }, th:{
+  ok:'ตกลง', wipe_keys:'ลบ AI key ที่บันทึกไว้ด้วย (โค้ชและแท็บอาหาร)',
   tab_home:'หน้าหลัก', tab_food:'อาหาร', tab_lib:'คลังท่าฝึก', tab_prog:'ความคืบหน้า', tab_more:'เพิ่มเติม',
   home_sub:'บันทึกการซ้อม ห่วง TRX และยิม', back:'กลับ', done:'เสร็จ', start:'เริ่มซ้อม', next:'ถัดไป', prev:'ก่อนหน้า', finish:'จบการซ้อม',
   m_chest:'อก', m_shoulders:'ไหล่', m_triceps:'หลังแขน', m_lats:'ปีก (หลังกว้าง)', m_upperback:'หลังบน', m_biceps:'หน้าแขน',
@@ -170,7 +172,7 @@ const STR = {en:{
   exp_note:'มีผลกับจำนวนเซ็ตต่อสัปดาห์ที่แนะนำ', ring_mode:'ระบบพัฒนาท่าห่วง', guided:'แบบนำทาง', free:'อิสระ',
   guided_note:'เซสชันห่วงจะให้เฉพาะท่าที่ปลดล็อกแล้ว', free_note:'ใช้ได้ทุกท่า ไม่มีการล็อก',
   rest_alert:'เตือนเมื่อหมดเวลาพัก', on:'เปิด', off:'ปิด', rest_note:'มีเสียงและสั่นเมื่อหมดเวลาพัก เวลาพักขึ้นกับท่า (60 วินาที - 2.5 นาที)',
-  danger:'ข้อมูล', clear_all:'ลบข้อมูลทั้งหมด', clear_confirm:'ลบทุกเซ็ต ผลทดสอบ และความคืบหน้า? ย้อนกลับไม่ได้ ถ้าไม่แน่ใจให้ export สำรองก่อน',
+  danger:'ข้อมูล', clear_all:'ลบข้อมูลทั้งหมด', clear_confirm:'ลบข้อมูลทั้งหมดในเครื่องนี้: การฝึก ผลทดสอบ ความคืบหน้า โยคะ กิจกรรม นิสัย ชาเลนจ์ บันทึกอาหาร น้ำหนัก และรูป? ย้อนกลับไม่ได้ ถ้าไม่แน่ใจให้ export สำรองก่อน',
   cleared:'ลบข้อมูลทั้งหมดแล้ว', offline_note:'ใช้ออฟไลน์ได้ ข้อมูลอยู่ในเครื่องนี้',
   news_mastered:'🎉 ผ่านขั้น {0} แล้ว', news_unlocked:'ปลดล็อก: {0}',
   guide_html:`<div class="card"><h3>เริ่มต้นตรงนี้</h3><ul class="cues">

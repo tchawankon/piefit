@@ -52,3 +52,9 @@ Merged `chore/project-brain` (`e583a19`) into main as `6ea518b` and shipped (SHI
 - The `f0156e0` ship logged PENDING although the deploy succeeded and production matched.
 - Cause: the `git()` helper trims output, so the expected file lost its final newline.
 - Fix: compare with trailing whitespace trimmed on both sides. A corrected OK line was appended by hand after re-checking the deploy and the content.
+
+## 2026-11-07 · incident · CSS variable --warn was never defined
+- About 20 places used `var(--warn)`, and CLAUDE.md listed it, but `index.html` never defined it. Warning text rendered in the default colour, and a danger button background was transparent (invisible).
+- Found while testing the new delete-all sheet at 360px.
+- Fix: defined `--warn` in the light and both dark theme blocks.
+- Lesson: the docs listed a token that the code didn't have. Code is the source of truth.

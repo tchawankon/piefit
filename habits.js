@@ -767,9 +767,39 @@ const Habits = (() => {
     save();
   }
 
+  // Backup (field names are the backup format: habits, habitsLogs, inbody). Types are checked so a bad file
+  // cannot break the Habits screen. Absent fields keep the current data.
+  const isO = v => v && typeof v === 'object' && !Array.isArray(v);
+  const prim = v => v === null || ['number', 'string', 'boolean'].includes(typeof v);
+  function exportState() { return { habits: CFG, habitsLogs: LOGS, inbody: INBODY_HIST }; }
+  function importState(d) {
+    if (!isO(d)) return;
+    if (isO(d.habits)) {
+      const c = {};
+      Object.entries(d.habits).forEach(([k, v]) => {
+        if (!prim(v)) return;
+        if (k in DEFAULT_CFG) {
+          const def = DEFAULT_CFG[k];
+          if (def === null ? (v === null || typeof v === 'number') : typeof v === typeof def) c[k] = v;
+        } else if (k === 'customTargets' && typeof v === 'boolean') c[k] = v;
+      });
+      CFG = Object.assign({}, DEFAULT_CFG, c);
+    }
+    if (isO(d.habitsLogs)) LOGS = Object.fromEntries(Object.entries(d.habitsLogs)
+      .filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && isO(v))
+      .map(([k, v]) => [k, Object.fromEntries(Object.entries(v).filter(([, x]) => prim(x)))]));
+    if (Array.isArray(d.inbody)) INBODY_HIST = d.inbody.filter(e => isO(e) && typeof e.t === 'number')
+      .map(e => Object.fromEntries(Object.entries(e).filter(([, x]) => x === null || typeof x === 'number')));
+    save(); load();
+  }
+  function clear() { CFG = Object.assign({}, DEFAULT_CFG); LOGS = {}; INBODY_HIST = []; save(); load(); }
+
   return {
     load,
     save,
+    exportState,
+    importState,
+    clear,
     syncProtein,
     onWeight,
     autoWorkout,

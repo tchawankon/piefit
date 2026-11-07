@@ -264,8 +264,9 @@ function backupShape() {
       put(exp, k.name, nested ? modExport(nested[1]) : null);
     }
   }
-  // import: d.x in importData, plus module importState(d) / importState(d.x)
-  const [io, ie] = body('importData'), is = c.slice(io, ie);
+  // import: d.x in importData and applyImport (the confirmed second half), plus module importState(d) / importState(d.x)
+  const IMPORT_FNS = ['importData', 'applyImport'];
+  const is = IMPORT_FNS.filter(n => c.includes(`function ${n}(`)).map(n => { const [o, e] = body(n); return c.slice(o, e); }).join(' ');
   for (const m of is.matchAll(/\bd\.([A-Za-z_$][\w$]*)/g)) put(imp, m[1]);
   for (const m of is.matchAll(/\b([A-Z]\w*)\.importState\(\s*d(?:\.(\w+))?\s*\)/g)) {
     if (m[2]) put(imp, m[2], modImport(m[1])); else modImport(m[1]).forEach(k => put(imp, k));

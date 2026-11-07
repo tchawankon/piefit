@@ -45,11 +45,11 @@ Each rule is binding. Numbers are never reused; a retired rule keeps its number 
    Why: user data exists only on the device under those names; old backups use the field names.
 5. **A new user-data key gets a row in MAP-DATA plus export and import with the same field name, in the same commit.**
    Why: wiring was ad hoc in `7684964` and `yfeel` is still not backed up. Check: `map-check` storage-keys, backup-fields.
-6. **A feature writes only its own AI key slot, never another feature's.**
-   Why: Food tab and coach keys got mixed up (`7684964`).
+6. **Saving a key writes only the feature's own slot (a Claude key saved in Food is also shared to `aikey`); removing a key clears every slot through `clearAiKeys()`.**
+   Why: Food tab and coach keys got mixed up (`7684964`); the owner decided on 2026-11-07 that the keys are shared, so "removed" must really mean removed.
 7. **APK builds stay manual; never change the workflow trigger, signing, `appId` or keystore.**
    Why: automatic builds were removed on purpose (`46a3b00`); a new appId or key means phones refuse the update. Check: `map-check` ci-manual.
-8. **No new `prompt()`, `alert()` or `confirm()`; use a `.modal` + `.sheet` (copyable text in a textarea sheet).**
+8. **No `prompt()`, `alert()` or `confirm()`; use the shared sheets in app.js (`confirmSheet`, `numSheet`, `noticeSheet`) or a `.modal` + `.sheet`.**
    Why: owner's UI rule; legacy calls are frozen by a baseline. Check: `map-check` baseline.
 9. **Escape before `innerHTML`: `esc()` (in `nutrition*.js` use `escH`) for anything a user typed or an AI returned.**
    Why: AI and user text is rendered as HTML.
