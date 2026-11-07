@@ -389,7 +389,7 @@ const Coach = (() => {
     box.innerHTML = `<p class="sub">${t('gl_intro')}</p>` + (GOALS.length ? GOALS.map(g => goalCard(g, true)).join('') : `<div class="card"><small>${t('gl_none')}</small></div>`) +
       `<button class="btn" id="gadd">+ ${t('gl_add')}</button>`;
     box.querySelector('#gadd').onclick = goalEditor;
-    box.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { if(confirm(t('gl_del'))){ GOALS = GOALS.filter(g => g.id !== b.dataset.gdel); save(); render(); } });
+    box.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { confirmSheet(t('gl_del'), () => { GOALS = GOALS.filter(g => g.id !== b.dataset.gdel); save(); render(); }, {yes:t('remove'), danger:true}); });
   }
   function reviewView(box){
     const r = review(), d = (a, b) => b ? (a >= b ? '▲' : '▼') : '';
@@ -548,7 +548,7 @@ Do not invent numbers that are not in the data; say what is missing instead.`;
       $('#asend').onclick = () => { const q = $('#aq').value; $('#aq').value = ''; send(q); };
       on('[data-aq]', el => send(t(el.dataset.aq)));
       $('#aclear').onclick = () => { CHAT = []; save(); render(); };
-      $('#aoff').onclick = () => { if(confirm(t('ai_off_confirm'))){ store.set('aikey', ''); PROF.aiOn = false; save(); render(); } };
+      $('#aoff').onclick = () => { confirmSheet(t('ai_off_confirm'), () => { clearAiKeys(); PROF.aiOn = false; save(); render(); }); };
       if(v.ask){ const q = v.ask; v.ask = null; send(q); }
     }
     return {ready, view:view_, context};

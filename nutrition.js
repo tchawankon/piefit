@@ -1272,13 +1272,10 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
 
     if (m.querySelector('#km_clear')) {
       m.querySelector('#km_clear').onclick = () => {
-        // only drop the key this module owns; the coach's own Claude key stays untouched
-        if (typeof store !== 'undefined') {
-          store.set('nutri_key', '');
-          store.set('gemini_key', '');
-        }
+        // the AI keys are shared with the coach, so removing here removes every saved key (app.js clearAiKeys)
+        clearAiKeys();
         m.remove();
-        if (typeof toast === 'function') toast(isTh ? 'ลบคีย์เรียบร้อยแล้ว' : 'Key removed');
+        if (typeof toast === 'function') toast(isTh ? 'ลบ AI key ทั้งหมดแล้ว (รวมของโค้ช)' : 'All AI keys removed (coach too)');
         view();
       };
     }
@@ -1316,10 +1313,12 @@ const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&am
     get days() { return DAYS; },
     get myFoods() { return MY_FOODS; },
     exportState: () => ({ days: DAYS, myFoods: MY_FOODS, customTargets: CUSTOM_TARGETS }),
+    clear: () => { DAYS = {}; MY_FOODS = []; CUSTOM_TARGETS = null; store.set(KEY_DAYS, DAYS); store.set(KEY_MY_FOODS, MY_FOODS); store.set(KEY_CUSTOM_TARGETS, null); },
     importState: (d) => {
       if (!d || typeof d !== 'object') return;
-      if (d.days && typeof d.days === 'object') DAYS = d.days;
-      if (Array.isArray(d.myFoods)) MY_FOODS = d.myFoods;
+      if (d.days && typeof d.days === 'object' && !Array.isArray(d.days))
+        DAYS = Object.fromEntries(Object.entries(d.days).filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && v && typeof v === 'object'));
+      if (Array.isArray(d.myFoods)) MY_FOODS = d.myFoods.filter(f => f && typeof f === 'object');
       CUSTOM_TARGETS = (d.customTargets && d.customTargets.cal > 0) ? d.customTargets : null;
       store.set(KEY_DAYS, DAYS); store.set(KEY_MY_FOODS, MY_FOODS); store.set(KEY_CUSTOM_TARGETS, CUSTOM_TARGETS);
     }

@@ -35,28 +35,29 @@ Checks: `storage-keys` (code keys = table keys) and `backup-fields` (each backup
 | `chat` | coach.js | none (AI chat history, device-only) | |
 | `aikey` | coach.js | none (secret) | Claude key, shared read by the Food tab |
 | `body` | body.js | `body` | weigh-ins |
-| `body_goal` | body.js | `bodyGoal` | target weight, kg |
+| `body_goal` | body.js | `bodyGoal` | target weight, kg; absent in old backups: current goal kept |
 | `yoga` | yoga.js | `yoga` | |
 | `ylvl` | yoga.js | `ylvl` | |
-| `yfeel` | yoga.js | none (BUG: should be backed up, see CURRENT-SPRINT) | |
+| `yfeel` | yoga.js | `yfeel` | absent in old backups: current value kept |
 | `activity_log_v1` | activity.js | `activities` | outside workouts |
-| `habits_cfg` | habits.js | `habits` | import writes via `store.set` in app.js (bypasses the module) |
-| `habits_logs` | habits.js | `habitsLogs` | same |
-| `habits_inbody` | habits.js | `inbody` | same |
-| `challenge_state_v4` | challenge.js | `challenge` | same |
+| `habits_cfg` | habits.js | `habits` | via Habits.exportState/importState (type-checked) |
+| `habits_logs` | habits.js | `habitsLogs` | via Habits.exportState/importState |
+| `habits_inbody` | habits.js | `inbody` | via Habits.exportState/importState |
+| `challenge_state_v4` | challenge.js | `challenge` | via Challenge.exportState/importState (type-checked) |
 | `nutrition_days_v1` | nutrition.js | `nutrition` | nested `{days, myFoods, customTargets}` via `Nutrition.exportState()` |
 | `nutrition_my_foods_v1` | nutrition.js | `nutrition` | |
 | `nutrition_custom_targets_v1` | nutrition.js | `nutrition` | |
 | `nutri_key` | nutrition.js | none (secret) | Food tab key slot |
-| `gemini_key` | nutrition.js | none (secret, legacy) | read only |
+| `gemini_key` | nutrition-ai.js | none (secret, legacy) | read by getStoredKey; cleared by clearAiKeys in app.js |
 
 ## AI key slots
 
-- Each feature writes only its own slot: coach writes `aikey`, Food writes `nutri_key`.
-- Food reads `nutri_key`, then `aikey`, then `gemini_key` through one helper, `getStoredKey` in nutrition-ai.js, which also cleans pasted prefixes.
-- Clearing a key clears only the feature's own slot. Known gap: see CURRENT-SPRINT.
+- Saving: coach writes `aikey`; Food writes `nutri_key`, and a Claude key saved in Food is also written to `aikey` (shared).
+- Reading: Food tries `nutri_key`, then `aikey`, then `gemini_key` through one helper, `getStoredKey` in nutrition-ai.js, which also cleans pasted prefixes.
+- Removing: every "remove key" button and the Delete-all option call `clearAiKeys()` in app.js, which clears all three slots (owner decision 2026-11-07).
 
 ## Delete all data (`#wipe`, app.js)
 
-It currently clears log, mastered, news, cal, active, coach checks and goals, chat, body entries, yoga, activity and photos.
-It does not clear habits, challenge, nutrition, `body_goal` or the AI keys (tracked in CURRENT-SPRINT). A new key must be added here or listed as kept on purpose.
+It clears everything in the table except: `settings` and `targets` (preferences), the coach `profile`, and the AI keys. The keys are cleared only when the user ticks the "also remove AI keys" box.
+It does this through each module's `clear()` (`Yoga`, `Activity`, `Habits`, `Challenge`, `Nutrition`) plus app.js state, `Body.goal`, and IndexedDB photos.
+A new key must be cleared here or listed as kept on purpose.

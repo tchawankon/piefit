@@ -33,12 +33,12 @@ function loadState(){
   }
   if(!VENUE_EQ[SET.venue]) SET.venue = 'rings';
   SET.sfx = Object.assign({}, SET_DEFAULT.sfx, isObj(SET.sfx) ? SET.sfx : {});
-  Coach.load(); Body.load(); Yoga.load(); Activity.load(); if(typeof Habits !== "undefined") Habits.load(); if(typeof Challenge !== "undefined") Challenge.load(); if(typeof Nutrition !== "undefined") Nutrition.load();
+  Coach.load(); Body.load(); Yoga.load(); Activity.load(); Habits.load(); Challenge.load(); Nutrition.load();
 }
 function persist(){
   store.set('log', LOG); store.set('mastered', MASTERED); store.set('news', NEWS);
   store.set('targets', TG); store.set('cal', CAL); store.set('settings', SET);
-  Coach.save(); if(typeof Habits !== "undefined") Habits.save(); if(typeof Challenge !== "undefined") Challenge.save(); if(typeof Nutrition !== "undefined") Nutrition.save();
+  Coach.save(); Habits.save(); Challenge.save(); Nutrition.save();
 }
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -101,7 +101,7 @@ function weekSets(){
     x.p.forEach(m => out[m] += 1); x.s.forEach(m => out[m] += .5);
   });
   // activities done outside the app (pilates, swimming, sports) count as equivalent sets
-  if(typeof Activity !== 'undefined') Object.entries(Activity.weekCredit()).forEach(([m, s]) => { if(m in out) out[m] += s; });
+  Object.entries(Activity.weekCredit()).forEach(([m, s]) => { if(m in out) out[m] += s; });
   return out;
 }
 const byNeed = wk => Object.keys(MUSCLES).sort((a, b) => wk[a]/target(a) - wk[b]/target(b));
@@ -110,7 +110,7 @@ function recentMuscles(){
   const cnt = {}, since = Date.now() - 48*3600e3;
   LOG.filter(l => l.t >= since && EX[l.ex]).forEach(l => EX[l.ex].p.forEach(m => cnt[m] = (cnt[m] || 0) + 1));
   const out = new Set(Object.keys(cnt).filter(m => cnt[m] >= 2));
-  if(typeof Activity !== 'undefined') Activity.recentHard().forEach(m => out.add(m)); // only hard outside sessions
+  Activity.recentHard().forEach(m => out.add(m)); // only hard outside sessions
   return out;
 }
 
@@ -471,9 +471,50 @@ function toast(msg){
   const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg; document.body.appendChild(d);
   setTimeout(() => d.remove(), 2600);
 }
-function askNum(label, cur){
-  const v = prompt(label, cur); if(v == null) return null;
-  const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n >= 0 ? n : null;
+/* Sheets that replace prompt/alert/confirm (Iron Rule 8). Shared by every module; called only from handlers,
+   so modules that load before app.js can use them. Text is escaped here. */
+function sheetModal(html){
+  const o = document.createElement('div'); o.className = 'modal restm';
+  o.innerHTML = `<div class="sheet">${html}</div>`;
+  o.onclick = e => { if(e.target === o) o.remove(); };
+  document.body.appendChild(o); return o;
+}
+function noticeSheet(msg){
+  const o = sheetModal(`<p>${esc(msg)}</p><button class="btn" data-ok>${t('ok')}</button>`);
+  o.querySelector('[data-ok]').onclick = () => o.remove();
+}
+// confirmSheet(msg, onYes, {yes, danger, checks:[{id, label, on}]}) -> onYes({id: checked})
+function confirmSheet(msg, onYes, opts = {}){
+  const checks = opts.checks || [];
+  const o = sheetModal(`<p>${esc(msg)}</p>
+    ${checks.map(c => `<label class="row" style="gap:10px;min-height:44px;flex-wrap:wrap"><input type="checkbox" data-ck="${esc(c.id)}"${c.on ? ' checked' : ''} style="width:22px;height:22px"><span class="grow">${esc(c.label)}</span></label>`).join('')}
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn ghost grow" data-no>${t('cancel')}</button>
+      <button class="btn grow" data-yes${opts.danger ? ' style="background:var(--warn);color:#fff"' : ''}>${esc(opts.yes || t('ok'))}</button></div>`);
+  o.querySelector('[data-no]').onclick = () => o.remove();
+  o.querySelector('[data-yes]').onclick = () => {
+    const picked = {}; o.querySelectorAll('[data-ck]').forEach(c => { picked[c.dataset.ck] = c.checked; });
+    o.remove(); onYes(picked);
+  };
+}
+// The AI keys are shared by the coach and the Food tab (owner decision 2026-11-07): removing a key removes every slot.
+function clearAiKeys(){ ['aikey', 'nutri_key', 'gemini_key'].forEach(k => store.set(k, '')); }
+// numSheet(title, [{label, value}], onOk) -> onOk([number|null per field]); null = empty or invalid (caller keeps old value)
+function numSheet(title, fields, onOk){
+  const o = sheetModal(`<h3>${esc(title)}</h3>
+    ${fields.map((f, i) => `<label class="sub" style="display:block;margin-top:8px">${esc(f.label || '')}
+      <input class="inp" type="number" inputmode="decimal" step="any" min="0" data-n="${i}" value="${f.value == null ? '' : esc(f.value)}"></label>`).join('')}
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn ghost grow" data-no>${t('cancel')}</button><button class="btn grow" data-yes>${t('ok')}</button></div>`);
+  const first = o.querySelector('[data-n]'); if(first){ first.focus(); first.select(); }
+  o.querySelector('[data-no]').onclick = () => o.remove();
+  const ok = () => {
+    const vals = [...o.querySelectorAll('[data-n]')].map(inp => {
+      const n = parseFloat(String(inp.value).replace(',', '.')); return isFinite(n) && n >= 0 ? n : null; });
+    o.remove(); onOk(vals);
+  };
+  o.querySelector('[data-yes]').onclick = ok;
+  o.querySelectorAll('[data-n]').forEach(inp => { inp.onkeydown = e => { if(e.key === 'Enter') ok(); }; });
 }
 const fmtTime = s => Math.floor(s/60) + ':' + String(s % 60).padStart(2, '0');
 function pickExercise(title, hint, ids, onPick){
@@ -527,7 +568,7 @@ function render(){
   const V = {session:sessionView, run:runView, summary:summaryView, onboard:onboardView, detail:detailView,
     paths:pathsView, guide:guideView, settings:settingsView, routine:Coach.routineView, plan:Coach.planView, profile:Coach.profileView, coach:Coach.AI.view,
     ysess:Yoga.sessView, yvids:Yoga.vidsView, ypose:Yoga.poseView, yrun:Yoga.runView, ysum:Yoga.sumView};
-  if(view.name === 'home') ({home:homeView, food:(typeof Nutrition !== 'undefined' ? Nutrition.view : () => {}), lib:libView, yoga:Yoga.homeView, prog:progView, more:moreView})[tab]();
+  if(view.name === 'home') ({home:homeView, food:Nutrition.view, lib:libView, yoga:Yoga.homeView, prog:progView, more:moreView})[tab]();
   else V[view.name]();
 }
 
@@ -565,9 +606,9 @@ function homeView(){
     reason = focus.length ? t('focus', focus.join(', ')) : '';
   }
   app.innerHTML = `<div class="top"><div class="grow"><h1>PieFit</h1><p class="sub">${t('home_sub')}</p></div></div>
-    ${typeof Habits !== "undefined" ? Habits.cardHTML() : ""}
+    ${Habits.cardHTML()}
     ${Activity.homeCardHTML()}
-    ${typeof Challenge !== "undefined" ? Challenge.homeBannerHTML() : ""}
+    ${Challenge.homeBannerHTML()}
     ${ACTIVE ? `<div class="card hl"><b>⏸ ${t('resume_title')}</b><br><small>${sessionName(ACTIVE.s)} · ${t('ex_of', Math.min(ACTIVE.i + 1, ACTIVE.list.length), ACTIVE.list.length)}</small>
       <div class="row" style="margin-top:10px"><button class="btn" id="resume">${t('resume')}</button><button class="btn ghost w-auto" id="discard">${t('discard')}</button></div></div>` : ''}
     ${NEWS.map((n, i) => `<div class="card warn row"><div class="grow">${newsText(n)}</div><button class="chip" data-news="${i}">OK</button></div>`).join('')}
@@ -610,10 +651,10 @@ function homeView(){
   if($('#clsgo')) $('#clsgo').onclick = () => go('yoga', {name:'home', jump:'cls'});
   $('#moretips').onclick = () => { progSub = 'review'; go('prog'); };
   if($('#resume')) $('#resume').onclick = () => { Native.prepare(); if(SET.music !== 'off') Sound.startMusic(SET.music); view = Object.assign({name:'run'}, ACTIVE); render(); window.scrollTo(0, 0); };
-  if($('#discard')) $('#discard').onclick = () => { if(confirm(t('discard_confirm'))){ ACTIVE = null; store.set('active', null); render(); } };
-  if(typeof Habits !== 'undefined') Habits.bindEvents(app);
+  if($('#discard')) $('#discard').onclick = () => confirmSheet(t('discard_confirm'), () => { ACTIVE = null; store.set('active', null); render(); }, {danger:true});
+  Habits.bindEvents(app);
   Activity.bindHome(app);
-  if(typeof Challenge !== 'undefined') Challenge.bindHomeBanner(app);
+  Challenge.bindHomeBanner(app);
 }
 function lastDone(sid){
   const l = [...LOG].reverse().find(l => l.sess === sid);
@@ -745,12 +786,12 @@ function runView(){
   const showR = () => { rEl.textContent = view.reps + (x.hold ? 's' : ''); };
   $('#m').onclick = () => { view.reps = Math.max(1, view.reps - step); showR(); };
   $('#p').onclick = () => { view.reps += step; showR(); };
-  rEl.onclick = () => { const v = askNum(unitOf(x), view.reps); if(v != null){ view.reps = Math.max(1, Math.round(v)); showR(); } };
+  rEl.onclick = () => numSheet(unitOf(x), [{value:view.reps}], ([v]) => { if(v != null){ view.reps = Math.max(1, Math.round(v)); showR(); } });
   if(x.load){
     const wEl = $('#wv'), inc = incOf(x), showW = () => { wEl.textContent = fmtW(x, view.w); };
     $('#wm').onclick = () => { view.w = Math.max(0, +(view.w - inc).toFixed(2)); showW(); };
     $('#wp').onclick = () => { view.w = +(view.w + inc).toFixed(2); showW(); };
-    wEl.onclick = () => { const v = askNum(t('weight') + ' (kg)', view.w); if(v != null){ view.w = v; showW(); } };
+    wEl.onclick = () => numSheet(t('weight') + ' (kg)', [{value:view.w}], ([v]) => { if(v != null){ view.w = v; showW(); } });
   }
   const hb = $('#hold');
   if(hb) hb.onclick = () => {
@@ -776,7 +817,7 @@ function runView(){
   $('#prev').onclick = () => { view.i--; resetEx(); };
   $('#next').onclick = () => { if(view.i === view.list.length - 1) finishWorkout(); else { view.i++; resetEx(); } };
   $('#quit').onclick = () => {
-    if(Object.values(view.logged).flat().length){ if(confirm(t('quit_confirm'))) finishWorkout(); }
+    if(Object.values(view.logged).flat().length) confirmSheet(t('quit_confirm'), () => finishWorkout());
     else { ACTIVE = null; store.set('active', null); Sound.stopMusic(); go('home'); }
   };
 }
@@ -831,14 +872,22 @@ function logSet(id, isTest, done, N){
 }
 function editSet(lid){
   const l = LOG.find(e => e.id === lid); if(!l) return; const x = EX[l.ex];
-  const r = askNum(unitOf(x), l.reps); if(r == null) return; l.reps = Math.max(1, Math.round(r));
-  if(x && x.load){ const w = askNum(t('weight') + ' (kg)', l.w); if(w != null) l.w = w; }
-  if(!l.cal){ const e = askNum(t('rpe_edit'), l.rpe || 2); if(e != null) l.rpe = Math.min(4, Math.max(1, Math.round(e))); }
-  if(l.cal && CAL[l.ex] && CAL[l.ex].t === l.t) CAL[l.ex] = {t:l.t, reps:l.reps, w:l.w};
-  persist(); render();
+  const fields = [{k:'r', label:unitOf(x), value:l.reps}];
+  if(x && x.load) fields.push({k:'w', label:t('weight') + ' (kg)', value:l.w});
+  if(!l.cal) fields.push({k:'e', label:t('rpe_edit'), value:l.rpe || 2});
+  numSheet(x ? x.name : l.ex, fields, vals => {
+    const v = Object.fromEntries(fields.map((f, i) => [f.k, vals[i]]));
+    if(v.r == null) return; l.reps = Math.max(1, Math.round(v.r));
+    if(v.w != null) l.w = v.w;
+    if(v.e != null) l.rpe = Math.min(4, Math.max(1, Math.round(v.e)));
+    if(l.cal && CAL[l.ex] && CAL[l.ex].t === l.t) CAL[l.ex] = {t:l.t, reps:l.reps, w:l.w};
+    persist(); render();
+  });
 }
 function deleteSet(lid){
-  if(!confirm(t('del_confirm'))) return;
+  confirmSheet(t('del_confirm'), () => removeSet(lid), {danger:true, yes:t('remove')});
+}
+function removeSet(lid){
   const l = LOG.find(e => e.id === lid);
   LOG = LOG.filter(e => e.id !== lid);
   if(l && l.cal && CAL[l.ex] && CAL[l.ex].t === l.t) delete CAL[l.ex];
@@ -983,7 +1032,7 @@ let progSub = 'week';
 function progView(){
   app.innerHTML = `<h1>${t('tab_prog')}</h1>${segHTML('sub', [['journey', (typeof SET !== 'undefined' && SET.lang === 'th' ? '🗺️ แผน 30 วัน & สถิติ' : '🗺️ 30-Day Program & Stats')], ['cal', SET.lang === 'th' ? '📅 ปฏิทิน' : '📅 Calendar'], ['week', t('p_week')], ['review', t('p_review')], ['goals', t('p_goals')], ['body', t('p_body')], ['hist', t('p_hist')], ['act', SET.lang === 'th' ? '🏊 กิจกรรมอื่น' : '🏊 Other activities'], ['base', t('p_base')]], progSub).replace('class="seg"', 'class="seg scroll"')}<div id="pbody"></div>`;
   on('[data-sub]', el => { progSub = el.dataset.sub; render(); });
-  ({journey:(box) => typeof Challenge !== 'undefined' ? Challenge.renderView(box) : null, cal:Calendar.view, week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, act:Activity.view, base:progBase})[progSub]($('#pbody'));
+  ({journey:(box) => Challenge.renderView(box), cal:Calendar.view, week:progWeek, review:Coach.reviewView, goals:Coach.goalsView, body:Body.view, hist:progHist, act:Activity.view, base:progBase})[progSub]($('#pbody'));
 }
 function progWeek(box){
   const wk = weekSets(), since = Date.now() - 7*DAY, rec = recentMuscles();
@@ -1145,18 +1194,21 @@ function settingsView(){
     else if(Sound.musicOn()) Sound.stopMusic();
     else { Sound.startMusic(SET.music === 'off' ? 'focus' : SET.music); setTimeout(() => Sound.stopMusic(), 12000); }
   });
-  $('#wipe').onclick = () => {
-    if(!confirm(t('clear_confirm'))) return;
+  $('#wipe').onclick = () => confirmSheet(t('clear_confirm'), picked => {
     LOG = []; MASTERED = {}; NEWS = []; CAL = {}; ACTIVE = null; store.set('active', null);
-    Coach.importState({checks:[], goals:[]}); Body.entries = []; store.set('chat', []); Yoga.clear(); Activity.clear();
+    Coach.importState({checks:[], goals:[]}); Body.entries = []; Body.goal = null; store.set('chat', []);
+    Yoga.clear(); Activity.clear(); Habits.clear(); Challenge.clear(); Nutrition.clear();
+    if(picked.keys) clearAiKeys();
     try { indexedDB.deleteDatabase('piefit'); } catch(e){}
     persist(); toast(t('cleared')); render();
-  };
+  }, {danger:true, yes:t('remove'), checks:[{id:'keys', label:t('wipe_keys'), on:false}]});
 }
 function exportData(){
-  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries, bodyGoal:Body.goal}, Coach.exportState(), Yoga.exportState(), Activity.exportState(), typeof Habits !== "undefined" ? {habits:Habits.cfg, habitsLogs:Habits.logs, inbody:Habits.inbodyHistory} : {}, typeof Challenge !== "undefined" ? {challenge:Challenge.state} : {}, typeof Nutrition !== "undefined" ? {nutrition:Nutrition.exportState()} : {});
+  // field names are the backup format: never rename them (Iron Rule 4); see docs/reference/MAP-DATA.md
+  const data = Object.assign({app:'piefit', version:3, exported:new Date().toISOString(), log:LOG, mastered:MASTERED, news:NEWS, targets:TG, cal:CAL, settings:SET, body:Body.entries, bodyGoal:Body.goal},
+    Coach.exportState(), Yoga.exportState(), Activity.exportState(), Habits.exportState(), Challenge.exportState(), {nutrition:Nutrition.exportState()});
   const name = 'piefit-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-  if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => alert(t('export_fail'))); return; }
+  if(Native.on){ Native.shareFile(name, JSON.stringify(data)).then(() => toast(t('exported'))).catch(() => noticeSheet(t('export_fail'))); return; }
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -1168,14 +1220,21 @@ function importData(file){
   const r = new FileReader();
   r.onload = () => {
     let d; try { d = JSON.parse(r.result); } catch(e){ d = null; }
-    if(!d || !['piefit','ringfit'].includes(d.app) || !Array.isArray(d.log)) return alert(t('import_bad'));
-    if(!confirm(t('import_confirm', d.log.length))) return;
+    if(!d || !['piefit','ringfit'].includes(d.app) || !Array.isArray(d.log)) return noticeSheet(t('import_bad'));
+    confirmSheet(t('import_confirm', d.log.length), () => applyImport(d), {danger:true});
+  };
+  r.readAsText(file);
+}
+function applyImport(d){
     LOG = d.log.filter(l => l && typeof l.ex === 'string' && typeof l.t === 'number' && typeof l.reps === 'number')
       .map((l, i) => { const o = {id: typeof l.id === 'string' ? l.id : l.t + '-' + i, t:l.t, sess:String(l.sess || ''), ex:l.ex, reps:l.reps};
         if(typeof l.w === 'number') o.w = l.w; if(l.cal) o.cal = true; if([1, 2, 3, 4].includes(l.rpe)) o.rpe = l.rpe; return o; });
-    Coach.importState(d); Yoga.importState(d); Activity.importState(d); if(d.habits) store.set('habits_cfg', d.habits); if(d.habitsLogs) store.set('habits_logs', d.habitsLogs); if(d.inbody) store.set('habits_inbody', d.inbody); if(d.challenge) { store.set('challenge_state_v4', d.challenge); } if(d.nutrition && typeof Nutrition !== 'undefined') Nutrition.importState(d.nutrition); if(typeof Habits !== 'undefined') Habits.load(); if(typeof Challenge !== 'undefined') Challenge.load(); if(typeof Nutrition !== 'undefined') Nutrition.load();
+    Coach.importState(d); Yoga.importState(d); Activity.importState(d); Habits.importState(d); Challenge.importState(d);
+    if(isObj(d.nutrition)) Nutrition.importState(d.nutrition); Nutrition.load();
     if(Array.isArray(d.body)) Body.entries = d.body.filter(e => isObj(e) && typeof e.t === 'number');
-    Body.goal = typeof d.bodyGoal === 'number' ? d.bodyGoal : null; if(typeof Habits !== 'undefined') Habits.onWeight();
+    // older backups have no bodyGoal: keep the current goal instead of clearing it
+    if(typeof d.bodyGoal === 'number' && d.bodyGoal > 0) Body.goal = d.bodyGoal; else if(d.bodyGoal === null) Body.goal = null;
+    Habits.onWeight();
     MASTERED = isObj(d.mastered) ? d.mastered : {};
     NEWS = Array.isArray(d.news) ? d.news.filter(n => typeof n === 'string' || isObj(n)) : [];
     if(isObj(d.targets)){ TG = {type: BASE_TARGET[d.targets.type] ? d.targets.type : 'general', custom: isObj(d.targets.custom) ? d.targets.custom : {}}; }
@@ -1185,8 +1244,6 @@ function importData(file){
     if(isObj(d.settings) && isObj(d.settings.sfx)) Object.keys(ev).forEach(k => { if(ev[k].includes(d.settings.sfx[k])) SET.sfx[k] = d.settings.sfx[k]; });
     SET.onboarded = true;
     persist(); toast(t('import_ok')); go('home');
-  };
-  r.readAsText(file);
 }
 
 /* ================= boot ================= */

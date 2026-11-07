@@ -431,7 +431,7 @@ const Yoga = (() => {
     $('#ypause').onclick = () => { v.paused = !v.paused; if(!v.paused) v.end = Date.now() + v.remain * 1000; $('#ypause').textContent = v.paused ? '▶ ' + t('yg_resume') : '⏸ ' + t('yg_pause'); };
     $('#ynext').onclick = advance;
     $('#yprev').onclick = () => { clearInterval(v.iv); v.iv = null; v.remain = null; v.phase = null; v.spoken = null; v.i = Math.max(0, v.i - 1); render(); };
-    $('#yq').onclick = () => { if(!routine && v.done.length && !confirm(t('yg_quit'))) return; clearInterval(v.iv); v.i = v.st.length; finish(); };
+    $('#yq').onclick = () => { const quit = () => { clearInterval(v.iv); v.i = v.st.length; finish(); }; if(!routine && v.done.length) confirmSheet(t('yg_quit'), quit); else quit(); };
     if($('#yamb')) $('#yamb').onclick = () => {
       if(Sound.ambientOn()) Sound.stopAmbient(); else Sound.startAmbient(SET.amb !== 'off' ? SET.amb : 'pad');
       $('#yamb').textContent = Sound.ambientOn() ? '🌊' : '🔇';
@@ -456,10 +456,12 @@ const Yoga = (() => {
     on('[data-feel]', el => { feel(v.ask, el.dataset.feel); v.ask = null; render(); });
     $('#ydone').onclick = () => v.after();
   }
-  function exportState(){ return {yoga:YLOG, ylvl:YLVL}; }
+  function exportState(){ return {yoga:YLOG, ylvl:YLVL, yfeel:YFEEL}; }
   function importState(d){
     if(Array.isArray(d.yoga)) YLOG = d.yoga.filter(y => isObj(y) && typeof y.t === 'number');
     if(isObj(d.ylvl)) YLVL = Object.fromEntries(Object.entries(d.ylvl).filter(([k, v]) => POSES[k] && [1, 2, 3].includes(v)));
+    // older backups have no yfeel: keep the current counters instead of wiping them
+    if(isObj(d.yfeel)) YFEEL = Object.fromEntries(Object.entries(d.yfeel).filter(([k, v]) => POSES[k] && Number.isInteger(v) && v >= 0 && v < 10));
     save();
   }
   function clear(){ YLOG = []; YLVL = {}; YFEEL = {}; save(); }
