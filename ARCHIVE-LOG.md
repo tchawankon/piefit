@@ -47,3 +47,8 @@ Merged `chore/project-brain` (`e583a19`) into main as `6ea518b` and shipped (SHI
 - The second ship (`159bae2`) failed the Pages build. The new IRON-RULES-DETAIL text quoted the Liquid tokens literally while warning about them.
 - The fixed ship.js caught it and logged PENDING, not OK. Production stayed on the `17c3d3a` build, so the app was unaffected.
 - Fix: the text now describes the tokens in words, there is a new `map-check` jekyll-liquid check, and Iron Rule 21 was added.
+
+## 2026-11-07 · incident · ship.js compared a trimmed file
+- The `f0156e0` ship logged PENDING although the deploy succeeded and production matched.
+- Cause: the `git()` helper trims output, so the expected file lost its final newline.
+- Fix: compare with trailing whitespace trimmed on both sides. A corrected OK line was appended by hand after re-checking the deploy and the content.

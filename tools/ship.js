@@ -49,7 +49,7 @@ function logLine(sha, ver, result) {
   const changed = git('diff', '--name-only', prev, full).split(/\r?\n/).filter(Boolean);
   const servable = changed.filter(f => !/\.md$/i.test(f) && !/(^|\/)[._]/.test(f) && f !== 'SHIP-LOG.txt');
   const probe = servable.includes('sw.js') ? 'sw.js' : servable[0] || null;
-  const norm = s => s.replace(/\r\n/g, '\n');
+  const norm = s => s.replace(/\r\n/g, '\n').trimEnd(); // git() trims its output, so compare without trailing whitespace
   const want = probe ? norm(git('show', `${full}:${probe}`)) : null;
 
   // 3. push = deploy
