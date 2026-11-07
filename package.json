@@ -3,6 +3,9 @@
   "private": true,
   "description": "PieFit Android build (Capacitor). The web app itself needs no build step.",
   "scripts": {
+    "preflight": "node tools/preflight.js",
+    "whats-next": "node tools/whats-next.js",
+    "ship": "node tools/ship.js",
     "bundle": "node native/bundle.js"
   },
   "dependencies": {

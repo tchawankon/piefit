@@ -3,3 +3,6 @@ www/
 android/
 *.p12
 *.keystore
+.claude/worktrees/
+.claude/settings.local.json
+_to_delete/

@@ -1,0 +1,53 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tools/whats-next.js\"", "timeout": 30 }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(node tools/whats-next.js)",
+      "Bash(node tools/map-check.js:*)",
+      "Bash(node tools/sprint-check.js:*)",
+      "Bash(node tools/preflight.js)",
+      "Bash(node tools/ship.js --dry-run)",
+      "Bash(npm run preflight)",
+      "Bash(npm run whats-next)",
+      "Bash(node --check:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch --list:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git worktree list:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git merge:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git branch -d:*)",
+      "Bash(git branch -D:*)",
+      "Bash(git clean:*)",
+      "Bash(node tools/ship.js)",
+      "Bash(npm run ship:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh release:*)",
+      "Bash(rm:*)",
+      "PowerShell(Remove-Item:*)",
+      "Edit(/native/**)",
+      "Write(/native/**)",
+      "Edit(/.github/**)",
+      "Write(/.github/**)",
+      "Edit(/capacitor.config.json)",
+      "Write(/capacitor.config.json)",
+      "Edit(/manifest.webmanifest)",
+      "Write(/manifest.webmanifest)"
+    ]
+  }
+}

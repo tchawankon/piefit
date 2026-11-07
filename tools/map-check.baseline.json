@@ -1,0 +1,44 @@
+{
+  "app.js": {
+    "prompt": 1,
+    "alert": 2,
+    "confirm": 5,
+    "documentListener": 5,
+    "windowListener": 0
+  },
+  "body.js": {
+    "prompt": 0,
+    "alert": 0,
+    "confirm": 2,
+    "documentListener": 0,
+    "windowListener": 0
+  },
+  "challenge.js": {
+    "prompt": 0,
+    "alert": 0,
+    "confirm": 1,
+    "documentListener": 0,
+    "windowListener": 0
+  },
+  "coach.js": {
+    "prompt": 0,
+    "alert": 0,
+    "confirm": 2,
+    "documentListener": 0,
+    "windowListener": 0
+  },
+  "sound.js": {
+    "prompt": 0,
+    "alert": 0,
+    "confirm": 0,
+    "documentListener": 2,
+    "windowListener": 0
+  },
+  "yoga.js": {
+    "prompt": 0,
+    "alert": 0,
+    "confirm": 1,
+    "documentListener": 0,
+    "windowListener": 0
+  }
+}
