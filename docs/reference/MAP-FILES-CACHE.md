@@ -20,6 +20,14 @@
 - **Keep:** `cache:'reload'` in the install step. It stops a new version from installing stale files from the HTTP cache (`aac72e0`).
 - **Checks:** `sw-version`, `sw-reload`.
 
+## Docs on the public site
+
+GitHub Pages (legacy build from `main` /) runs Jekyll over the repo:
+- `.md` files are served as `.html`.
+- Files starting with `_` or `.` are hidden.
+- A Liquid token in any `.md` or `.html` fails the whole build, and production then stops updating. Check: `jekyll-liquid`.
+- Adding a `.nojekyll` file at the root would switch Jekyll off. That changes how the site is served, so ask the owner first.
+
 ## External files
 
 The `EXT` regex in `sw.js` caches the MediaPipe and Anthropic SDK CDN files after the first download, in cache `piefit-ext`, which is never deleted on activate. If you bump the SDK version (MAP-MODULES › AI), old copies stay in that cache harmlessly.

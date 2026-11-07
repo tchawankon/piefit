@@ -395,10 +395,31 @@ function checkBaseline() {
   bad.length ? bad.forEach(b => fail(id, b)) : pass(id, 'no file above its prompt/alert/confirm/listener baseline');
 }
 
+// MAP-FILES-CACHE: GitHub Pages runs Jekyll, which parses every .md as Liquid. A stray double-brace or
+// brace-percent token fails the WHOLE site build, so production stops updating (incident 2026-11-07).
+function checkJekyllLiquid() {
+  const id = 'jekyll-liquid';
+  if (fs.existsSync(path.join(ROOT, '.nojekyll'))) return pass(id, '.nojekyll present: Jekyll does not run');
+  const skip = new Set(['node_modules', 'www', 'android', '.git', '.claude', '_to_delete']);
+  const bad = [];
+  (function walk(dir, rel) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (skip.has(e.name)) continue;
+      const r = rel ? rel + '/' + e.name : e.name, full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full, r);
+      else if (/\.(md|markdown|html)$/i.test(e.name)) {
+        fs.readFileSync(full, 'utf8').split(/\r?\n/).forEach((l, i) => { if (/\{\{|\{%/.test(l)) bad.push(`${r}:${i + 1}`); });
+      }
+    }
+  })(ROOT, '');
+  bad.length ? fail(id, `Liquid token in ${bad.join(', ')}; Jekyll would fail the Pages build. Rephrase (say "double braces") or wrap in {% raw %}`.replace('{% raw %}', 'a raw block'))
+    : pass(id, 'no Liquid tokens in .md/.html');
+}
+
 /* ---------- run ---------- */
 const CHECKS = { 'scripts-sw': checkScriptsSw, 'load-order': checkLoadOrder, 'sw-version': checkSwVersion, 'sw-reload': checkSwReload,
   'storage-keys': checkStorageKeys, 'backup-fields': checkBackupFields, i18n: checkI18n, 'ai-ids': checkAiIds, nav: checkNav,
-  'ci-manual': checkCiManual, 'module-api': checkModuleApi, baseline: checkBaseline };
+  'ci-manual': checkCiManual, 'module-api': checkModuleApi, baseline: checkBaseline, 'jekyll-liquid': checkJekyllLiquid };
 for (const [id, check] of Object.entries(CHECKS)) {
   try { check(); } catch (e) { fail(id, `check crashed: ${e.message} (script bug in tools/map-check.js)`); }
 }

@@ -75,3 +75,5 @@ Each rule is binding. Numbers are never reused; a retired rule keeps its number 
     Why: the guard hides a missing script and the feature just disappears.
 20. **Never delete files; move them to `_to_delete/` (git-ignored). Delete branches only when the owner agrees.**
     Why: owner's rule (2026-11-07).
+21. **Never write Liquid tokens (double curly braces, curly brace + percent) in any `.md` or `.html`; describe them in words.**
+    Why: Pages runs Jekyll; one such token in a doc failed the whole site build (2026-11-07). Check: `map-check` jekyll-liquid.

@@ -42,3 +42,8 @@ Merged `chore/project-brain` (`e583a19`) into main as `6ea518b` and shipped (SHI
 - Fix: ship.js now waits for the "pages build and deployment" run of the exact commit to succeed, AND compares a changed servable file byte for byte with production. Only then does it log and push the log commit.
 - Lesson: a goal check must observe something that this ship changes.
 - Also learned: Pages uses Jekyll (legacy build from main /), which turns `.md` into `.html` and hides `_`/`.` files. A Liquid syntax error in any `.md` can fail the whole site build. ship.js now reports that as `PENDING (deploy=completed failure)`.
+
+## 2026-11-07 · incident · Pages build failed on a Liquid token in a doc
+- The second ship (`159bae2`) failed the Pages build. The new IRON-RULES-DETAIL text quoted the Liquid tokens literally while warning about them.
+- The fixed ship.js caught it and logged PENDING, not OK. Production stayed on the `17c3d3a` build, so the app was unaffected.
+- Fix: the text now describes the tokens in words, there is a new `map-check` jekyll-liquid check, and Iron Rule 21 was added.

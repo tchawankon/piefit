@@ -18,7 +18,7 @@ The short forms in `docs/CORE-CONTEXT.md` are binding, and so is this file. Grep
    - if Pages does not update in time it logs `PENDING` and exits 1. Do not mark the work `live` then.
 5. Set the sprint entry to `live` with the ship-log line as evidence, then archive it.
 
-Pages builds with Jekyll: `.md` becomes `.html` and `_`/`.` files are hidden. A Liquid error (`{{`, `{%`) in any `.md` fails the whole site build.
+Pages builds with Jekyll: `.md` becomes `.html` and `_`/`.` files are hidden. A Liquid token (double curly braces, or curly brace + percent) in any `.md` or `.html` fails the whole site build: describe them in words. Check: `map-check` jekyll-liquid.
 
 A push made outside `ship.js` leaves no log line. `whats-next` flags this ("origin/main not in ship log").
 

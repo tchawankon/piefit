@@ -5,7 +5,7 @@ Each map entry: what it is → where it lives → what else must change → whic
 
 | If you are changing… | Map | Enforced by `map-check` |
 |---|---|---|
-| a script, asset, `index.html` tags, `sw.js`, the APK bundle, manifest, icons | [MAP-FILES-CACHE.md](MAP-FILES-CACHE.md) | scripts-sw, load-order, sw-version, sw-reload |
+| a script, asset, `index.html` tags, `sw.js`, the APK bundle, manifest, icons | [MAP-FILES-CACHE.md](MAP-FILES-CACHE.md) | scripts-sw, load-order, sw-version, sw-reload, jekyll-liquid |
 | a storage key, backup export/import, "delete all data", settings, AI key slots | [MAP-DATA.md](MAP-DATA.md) | storage-keys, backup-fields |
 | a cross-module call, translations, AI model/SDK, nav tabs, CI workflow | [MAP-MODULES.md](MAP-MODULES.md) | module-api, i18n, ai-ids, nav, ci-manual, baseline |
 
