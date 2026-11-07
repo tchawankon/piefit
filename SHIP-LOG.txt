@@ -3,3 +3,4 @@
 2026-11-07T02:30:24.817Z  main@f0156e0  sw=piefit-v33  PENDING (deploy=completed success, tools/map-check.js old after 10 min)
 2026-11-07T02:30:53.000Z  main@f0156e0  sw=piefit-v33  OK (re-verified by hand: Pages deploy success + tools/map-check.js matches live; the PENDING above was a ship.js compare bug)
 2026-11-07T02:51:47.515Z  main@97d8037  sw=piefit-v33  OK
+2026-11-07T03:08:49.137Z  main@9a83fc7  sw=piefit-v34  OK
