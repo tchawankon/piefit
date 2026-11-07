@@ -13,10 +13,12 @@ The short forms in `docs/CORE-CONTEXT.md` are binding, and so is this file. Grep
    - runs preflight
    - checks you are on `main` with a clean tree
    - pushes `origin main`
-   - polls `https://tchawankon.github.io/piefit/sw.js` until it serves the new `VERSION`
+   - waits until the GitHub "pages build and deployment" run for that exact commit succeeds, AND a file changed in this ship (prefer `sw.js`) is served byte-identical by production. VERSION alone is not enough, because a docs-only ship keeps it (incident 2026-11-07)
    - appends `OK` to `SHIP-LOG.txt` and commits only that file
    - if Pages does not update in time it logs `PENDING` and exits 1. Do not mark the work `live` then.
 5. Set the sprint entry to `live` with the ship-log line as evidence, then archive it.
+
+Pages builds with Jekyll: `.md` becomes `.html` and `_`/`.` files are hidden. A Liquid error (`{{`, `{%`) in any `.md` fails the whole site build.
 
 A push made outside `ship.js` leaves no log line. `whats-next` flags this ("origin/main not in ship log").
 

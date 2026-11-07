@@ -8,7 +8,8 @@
 'use strict';
 const fs = require('fs'), path = require('path'), { execFileSync, spawnSync } = require('child_process');
 const root = path.join(__dirname, '..');
-const LIVE_SW = 'https://tchawankon.github.io/piefit/sw.js';
+const LIVE_BASE = 'https://tchawankon.github.io/piefit/';
+const LIVE_SW = LIVE_BASE + 'sw.js';
 const LOG = path.join(root, 'SHIP-LOG.txt');
 const WAIT_MS = 10 * 60 * 1000, EVERY_MS = 15 * 1000;
 const dry = process.argv.includes('--dry-run');
@@ -42,28 +43,50 @@ function logLine(sha, ver, result) {
   console.log(`ship: main@${sha} sw=${ver} -> ${LIVE_SW}`);
   if (dry) { console.log('ship: --dry-run, stopping before push'); return; }
 
+  // A file whose content changed in this ship, to compare against production byte for byte.
+  // sw.js is the best probe; Jekyll turns .md into .html and hides dot/underscore files, so skip those.
+  const prev = git('rev-parse', 'origin/main'), full = git('rev-parse', 'main');
+  const changed = git('diff', '--name-only', prev, full).split(/\r?\n/).filter(Boolean);
+  const servable = changed.filter(f => !/\.md$/i.test(f) && !/(^|\/)[._]/.test(f) && f !== 'SHIP-LOG.txt');
+  const probe = servable.includes('sw.js') ? 'sw.js' : servable[0] || null;
+  const norm = s => s.replace(/\r\n/g, '\n');
+  const want = probe ? norm(git('show', `${full}:${probe}`)) : null;
+
   // 3. push = deploy
   execFileSync('git', ['push', 'origin', 'main'], { cwd: root, stdio: 'inherit' });
 
-  // 4. wait until production serves the new version
-  const t0 = Date.now(); let live = null;
-  while (Date.now() - t0 < WAIT_MS) {
+  // 4. goal state: the Pages deploy of THIS commit succeeded AND production serves the new content.
+  // (Checking only VERSION is not enough: a docs-only ship keeps the same VERSION and would pass instantly.)
+  const deployOf = () => {
     try {
-      const res = await fetch(LIVE_SW + '?ship=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) live = versionOf(await res.text());
+      // the Pages workflow is GitHub-managed: `--workflow <name>` cannot find it, so filter by run name
+      const out = execFileSync('gh', ['run', 'list', '--commit', full, '--json', 'name,status,conclusion', '--jq',
+        '[.[] | select(.name=="pages build and deployment")][0] | .status + " " + .conclusion'], { cwd: root, encoding: 'utf8' }).trim();
+      return out && out !== ' ' ? out : 'not-started';
+    } catch (e) { return e.code === 'ENOENT' ? 'gh-unavailable' : 'gh-error'; }
+  };
+  const t0 = Date.now(); let deploy = '', live = null, contentOk = !probe;
+  while (Date.now() - t0 < WAIT_MS) {
+    deploy = deployOf();
+    if (/^completed (failure|cancelled|timed_out)/.test(deploy)) break;
+    try {
+      const res = await fetch(`${LIVE_BASE}${probe || 'sw.js'}?ship=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) { const body = norm(await res.text()); live = versionOf(body) || live; if (probe) contentOk = body === want; }
     } catch (e) { /* offline or Pages hiccup: keep trying */ }
-    if (live === ver) break;
-    process.stdout.write(`ship: live sw=${live || '?'}, waiting...\r`);
+    const deployOk = deploy === 'completed success' || deploy === 'gh-unavailable';
+    if (deployOk && contentOk) break;
+    process.stdout.write(`ship: deploy=${deploy}, ${probe || 'sw.js'} live=${contentOk ? 'new' : 'old'}, waiting...\r`);
     await sleep(EVERY_MS);
   }
-  const ok = live === ver;
-  logLine(sha, ver, ok ? 'OK' : `PENDING (live sw=${live || '?'} after ${WAIT_MS / 60000} min)`);
+  const ok = (deploy === 'completed success' || deploy === 'gh-unavailable') && contentOk;
+  logLine(sha, ver, ok ? 'OK' + (deploy === 'gh-unavailable' ? ' (deploy not checked: gh missing)' : '')
+    : `PENDING (deploy=${deploy}, ${probe} ${contentOk ? 'new' : 'old'} after ${Math.round((Date.now() - t0) / 60000)} min)`);
 
   // 5. commit only the log line, so later sessions see the ship (SHIP-LOG.txt is not in sw.js FILES)
   git('add', 'SHIP-LOG.txt');
   git('commit', '-m', `Ship log: main@${sha} ${ver} ${ok ? 'OK' : 'PENDING'}`);
   execFileSync('git', ['push', 'origin', 'main'], { cwd: root, stdio: 'inherit' });
 
-  if (!ok) die('production did not show the new VERSION in time; check Pages, then re-run or verify by hand');
-  console.log('ship: OK, production serves ' + ver);
+  if (!ok) die('the Pages deploy did not succeed or production still serves old content; check Pages, then re-run or verify by hand');
+  console.log('ship: OK, production serves main@' + sha + ' (sw=' + ver + ')');
 })().catch(e => die(e.message));

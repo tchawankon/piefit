@@ -32,3 +32,13 @@ None of these was logged at the time. They were found in diffs and became Iron R
 - CLAUDE.md is the single instruction file (Claude Code loads it automatically) and imports `docs/CORE-CONTEXT.md`. No AGENTS.md or .cursorrules, because no other tool is used.
 - Deleted the merged branches `feature/other-activities` and `claude/piefit-code-review-architecture-de6c03` (and its worktree), with the owner's OK.
 - The CLAUDE.md storage-key table was missing 14 keys. It moved to `docs/reference/MAP-DATA.md`, which `map-check` now checks.
+
+## 2026-11-07 · done · Project brain shipped
+Merged `chore/project-brain` (`e583a19`) into main as `6ea518b` and shipped (SHIP-LOG 2026-11-07T02:15Z). Pages deploy of `17c3d3a` succeeded. The files: CLAUDE.md + docs/CORE-CONTEXT.md, maps, CURRENT-SPRINT/ARCHIVE-LOG, and tools (whats-next, preflight, map-check, sprint-check, ship). No app code changed.
+
+## 2026-11-07 · incident · ship.js logged OK before Pages deployed
+- First real ship. The goal check compared only the live `sw.js` VERSION. A docs-only ship keeps the same VERSION, so the check passed instantly and logged OK while Pages was still building.
+- The immediate log-commit push then cancelled the deploy of `6ea518b`. The later deploy of `17c3d3a` succeeded, so nothing was lost.
+- Fix: ship.js now waits for the "pages build and deployment" run of the exact commit to succeed, AND compares a changed servable file byte for byte with production. Only then does it log and push the log commit.
+- Lesson: a goal check must observe something that this ship changes.
+- Also learned: Pages uses Jekyll (legacy build from main /), which turns `.md` into `.html` and hides `_`/`.` files. A Liquid syntax error in any `.md` can fail the whole site build. ship.js now reports that as `PENDING (deploy=completed failure)`.

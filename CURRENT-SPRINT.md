@@ -15,11 +15,6 @@ Rules:
 
 ## Entries
 
-### Project brain (docs, maps, checks, ship script)
-STATUS: code-complete · 2026-11-07 · branch chore/project-brain, preflight green
-OPEN: owner review, then merge to main and ship (docs only, no app change)
-VERIFY: exists tools/map-check.js ; exists tools/whats-next.js ; exists docs/CORE-CONTEXT.md ; contains CLAUDE.md :: @docs/CORE-CONTEXT.md
-
 ### Backup misses yoga feel ratings (yfeel)
 STATUS: planned · 2026-11-07 · found by audit; yoga.js exportState omits yfeel
 OPEN: export and import `yfeel` in Yoga.exportState/importState, then update the MAP-DATA row
